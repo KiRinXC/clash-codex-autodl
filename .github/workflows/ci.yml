@@ -1,0 +1,85 @@
+name: clash-Autodl-codex CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Bash 语法检查
+        run: |
+          bash -n \
+            lib/codex_common.sh \
+            bootstrap_codex.sh \
+            setup_mihomo.sh \
+            verify_codex.sh \
+            uninstall_codex_bootstrap.sh \
+            converter.sh \
+            start.sh \
+            tests/proxy_commands_smoke.sh \
+            tests/proxy_pick_smoke.sh \
+            tests/setup_mihomo_env_smoke.sh
+
+      - name: ShellCheck 检查
+        run: |
+          shellcheck \
+            lib/codex_common.sh \
+            bootstrap_codex.sh \
+            setup_mihomo.sh \
+            verify_codex.sh \
+            uninstall_codex_bootstrap.sh \
+            converter.sh \
+            start.sh \
+            tests/proxy_commands_smoke.sh \
+            tests/proxy_pick_smoke.sh \
+            tests/setup_mihomo_env_smoke.sh
+
+      - name: 帮助命令检查
+        run: |
+          bash bootstrap_codex.sh --help
+          bash setup_mihomo.sh --help
+          bash verify_codex.sh --help
+          bash uninstall_codex_bootstrap.sh --help
+          bash converter.sh --help
+          bash tests/proxy_commands_smoke.sh
+          bash tests/proxy_pick_smoke.sh
+          bash tests/setup_mihomo_env_smoke.sh
+
+      - name: 配置生成检查
+        run: |
+          grep -qx "export CODEX_DOMESTIC_BASE_URL=''" .env.example
+          grep -qx "export CODEX_OVERSEAS_BASE_URL=''" .env.example
+
+          tmp_home="$(mktemp -d)"
+          tmp_env="$(mktemp)"
+          cat > "$tmp_env" <<'EOF'
+export CODEX_DOMESTIC_BASE_URL='https://domestic.example.invalid/api'
+export CODEX_OVERSEAS_BASE_URL='https://overseas.example.invalid/api'
+EOF
+          HOME="$tmp_home" bash -c 'source lib/codex_common.sh; codex_switch_relay_mode domestic "$1"' _ "$tmp_env"
+          grep -q 'model_provider = "OpenAI"' "$tmp_home/.codex/config.toml"
+          grep -q 'https://domestic.example.invalid/api' "$tmp_home/.codex/config.toml"
+
+      - name: 敏感信息扫描
+        run: |
+          api_key_pattern='OPENAI_API_KEY=["'\'']?[A-Za-z0-9_-]{20,}'
+          secret_key_pattern='sk-[A-Za-z0-9]{20,}'
+          if git grep --line-number -E "${secret_key_pattern}|${api_key_pattern}" -- \
+              . \
+              ':(exclude).env.example' \
+              ':(exclude)README.md' \
+              ':(exclude)docs/superpowers/**'; then
+            echo "发现疑似敏感信息"
+            exit 1
+          fi
