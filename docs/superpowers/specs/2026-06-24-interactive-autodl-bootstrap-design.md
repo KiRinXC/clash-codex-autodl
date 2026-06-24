@@ -79,12 +79,12 @@ Then the script writes local config, switches Codex to a default relay, verifies
 The shell hook should load commands and print a compact status block:
 
 ```text
-[信息] clash-Autodl-codex 命令已加载
-[信息] 代理: 已开启/未开启
-[信息] Mihomo: 运行中/未运行
-[信息] 当前节点: <node name>
-[信息] Codex 中转站: domestic/overseas <url>
-[成功] Codex 可用
+[INFO] clash-Autodl-codex 命令已加载
+[INFO] 代理: 已开启/未开启
+[INFO] Mihomo: 运行中/未运行
+[INFO] 当前节点: <node name>
+[INFO] Codex 中转站: domestic/overseas <url>
+[OK] Codex 可用
 ```
 
 If the smoke test is too slow or fails because of temporary network issues, the message should be clear and non-destructive. Users should still have commands available.
