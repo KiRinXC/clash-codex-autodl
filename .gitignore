@@ -3,6 +3,7 @@
 !.env.example
 logs/
 bin/
+docs/
 *.pid
 *.log
 conf/config*.yaml

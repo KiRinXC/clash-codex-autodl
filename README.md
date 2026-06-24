@@ -1,6 +1,6 @@
-# clash-Autodl-codex
+# clash-codex-autodl
 
-`clash-Autodl-codex` 用来在 AutoDL、SeetaCloud 或类似 Linux 云主机上快速配置 Mihomo/Clash 和 Codex CLI。
+`clash-codex-autodl` 用来在 AutoDL、SeetaCloud 或类似 Linux 云主机上快速配置 Mihomo/Clash 和 Codex CLI。
 
 新租的机器通常没有 Clash，也没有 Codex。这个项目的目标是让你通过一个交互式脚本完成初始化，然后在之后的终端里直接使用代理和 Codex 中转站切换命令。
 
@@ -9,8 +9,8 @@
 在目标服务器上执行：
 
 ```bash
-git clone https://github.com/KiRinXC/clash-Autodl-codex.git
-cd clash-Autodl-codex
+git clone https://github.com/KiRinXC/clash-codex-autodl.git
+cd clash-codex-autodl
 bash start.sh
 ```
 
@@ -26,10 +26,10 @@ OpenAI API key
 这些内容会持久化到本机：
 
 ```text
-~/.config/clash-autodl-codex/config.sh
+~/.config/clash-codex-autodl/config.sh
 ~/.codex/auth.json
 ~/.codex/config.toml
-~/.codex/clash-autodl-codex.sh
+~/.codex/clash-codex-autodl.sh
 ```
 
 不需要手动复制或编辑 `.env`。
@@ -100,7 +100,7 @@ codex_verify
 初始化完成后，新开的终端会自动加载：
 
 ```bash
-source ~/.codex/clash-autodl-codex.sh
+source ~/.codex/clash-codex-autodl.sh
 ```
 
 启动钩子会显示：
@@ -166,29 +166,29 @@ bash start.sh --import-env .env
 
 ## 卸载
 
-只移除 shell 启动钩子：
+只卸载代理组件：
 
 ```bash
-bash uninstall_codex_bootstrap.sh
+bash uninstall_codex_bootstrap.sh --proxy
 ```
 
-同时删除 Codex 配置：
+卸载 Codex 配置和本项目安装的 Codex CLI：
 
 ```bash
-bash uninstall_codex_bootstrap.sh --remove-codex-config
+bash uninstall_codex_bootstrap.sh --codex
 ```
 
-同时删除本项目的本机配置：
+代理、Codex 和本项目本机配置全部卸载：
 
 ```bash
-bash uninstall_codex_bootstrap.sh --remove-local-config
+bash uninstall_codex_bootstrap.sh --all
 ```
 
 ## 安全注意
 
 不要提交或公开这些内容：
 
-- `~/.config/clash-autodl-codex/config.sh`
+- `~/.config/clash-codex-autodl/config.sh`
 - `~/.codex/auth.json`
 - Clash/Mihomo 订阅 URL
 - OpenAI API key

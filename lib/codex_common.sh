@@ -13,9 +13,14 @@ DEFAULT_ACTIVE_RELAY=""
 DEFAULT_AUTO_CODEX_CHECK_ON_SHELL_START="false"
 DEFAULT_AUTO_PROXY_ON_SHELL_START="true"
 
-if [ -z "${CODEX_AUTODL_REPO_ROOT:-}" ]; then
-  CODEX_AUTODL_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [ -z "${CLASH_CODEX_AUTODL_REPO_ROOT:-}" ] && [ -n "${CODEX_AUTODL_REPO_ROOT:-}" ]; then
+  CLASH_CODEX_AUTODL_REPO_ROOT="$CODEX_AUTODL_REPO_ROOT"
 fi
+
+if [ -z "${CLASH_CODEX_AUTODL_REPO_ROOT:-}" ]; then
+  CLASH_CODEX_AUTODL_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+fi
+CODEX_AUTODL_REPO_ROOT="$CLASH_CODEX_AUTODL_REPO_ROOT"
 
 log_info() { printf '\033[1;34m[INFO]\033[0m %s\n' "$*"; }
 log_ok() { printf '\033[0;32m[OK]\033[0m %s\n' "$*"; }
@@ -23,11 +28,13 @@ log_warn() { printf '\033[1;33m[WARN]\033[0m %s\n' "$*"; }
 log_error() { printf '\033[0;31m[FAIL]\033[0m %s\n' "$*" >&2; }
 
 project_config_dir() {
-  printf '%s\n' "${CODEX_AUTODL_CONFIG_DIR:-$HOME/.config/clash-autodl-codex}"
+  printf '%s\n' "${CLASH_CODEX_AUTODL_CONFIG_DIR:-${CODEX_AUTODL_CONFIG_DIR:-$HOME/.config/clash-codex-autodl}}"
 }
 
 project_config_file() {
-  if [ -n "${CODEX_AUTODL_CONFIG_FILE:-}" ]; then
+  if [ -n "${CLASH_CODEX_AUTODL_CONFIG_FILE:-}" ]; then
+    printf '%s\n' "$CLASH_CODEX_AUTODL_CONFIG_FILE"
+  elif [ -n "${CODEX_AUTODL_CONFIG_FILE:-}" ]; then
     printf '%s\n' "$CODEX_AUTODL_CONFIG_FILE"
   else
     printf '%s/config.sh\n' "$(project_config_dir)"
@@ -596,14 +603,17 @@ shell_startup_status() {
 }
 
 install_shell_hook() {
-  local hook_file="$HOME/.codex/clash-autodl-codex.sh"
+  local hook_file="$HOME/.codex/clash-codex-autodl.sh"
+  local old_hook_file="$HOME/.codex/clash-autodl-codex.sh"
   local config_dir
 
   config_dir="$(project_config_dir)"
   mkdir -p "$HOME/.codex"
   cat > "$hook_file" <<EOF
-# 由 clash-Autodl-codex 管理
+# 由 clash-codex-autodl 管理
 export CODEX_AUTODL_REPO_ROOT="$CODEX_AUTODL_REPO_ROOT"
+export CLASH_CODEX_AUTODL_REPO_ROOT="$CODEX_AUTODL_REPO_ROOT"
+export CLASH_CODEX_AUTODL_CONFIG_DIR="$config_dir"
 export CODEX_AUTODL_CONFIG_DIR="$config_dir"
 export PATH="$HOME/.local/bin:\$PATH"
 
@@ -613,19 +623,21 @@ if [ -f "\${CODEX_AUTODL_REPO_ROOT}/lib/codex_common.sh" ]; then
   load_project_config
   shell_startup_status || true
 else
-  printf '\\033[1;33m[WARN]\\033[0m clash-Autodl-codex 仓库不存在: %s\\n' "\${CODEX_AUTODL_REPO_ROOT}"
+  printf '\\033[1;33m[WARN]\\033[0m clash-codex-autodl 仓库不存在: %s\\n' "\${CODEX_AUTODL_REPO_ROOT}"
 fi
 EOF
   chmod 600 "$hook_file" 2>/dev/null || true
+  rm -f "$old_hook_file"
 
   touch "$HOME/.bashrc"
   sed -i '/# clash-autodl-codex begin/,/# clash-autodl-codex end/d' "$HOME/.bashrc"
+  sed -i '/# clash-codex-autodl begin/,/# clash-codex-autodl end/d' "$HOME/.bashrc"
   {
-    echo "# clash-autodl-codex begin"
+    echo "# clash-codex-autodl begin"
     echo "[ -f \"$hook_file\" ] && . \"$hook_file\""
-    echo "# clash-autodl-codex end"
+    echo "# clash-codex-autodl end"
   } >> "$HOME/.bashrc"
-  log_ok "已在 ~/.bashrc 中安装 clash-Autodl-codex 启动钩子"
+  log_ok "已在 ~/.bashrc 中安装 clash-codex-autodl 启动钩子"
 }
 
 print_daily_commands() {

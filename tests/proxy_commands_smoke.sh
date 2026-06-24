@@ -13,7 +13,7 @@ grep -q 'codex_use_overseas()' "$common"
 grep -q 'codex_relay_status()' "$common"
 grep -q 'codex_verify()' "$common"
 grep -q 'shell_startup_status()' "$common"
-grep -q 'clash-autodl-codex.sh' "$common"
+grep -q 'clash-codex-autodl.sh' "$common"
 
 grep -qx "export CODEX_DOMESTIC_BASE_URL=''" "$repo_root/.env.example"
 grep -qx "export CODEX_OVERSEAS_BASE_URL=''" "$repo_root/.env.example"

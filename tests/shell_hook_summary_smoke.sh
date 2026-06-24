@@ -60,7 +60,7 @@ output="$(
   CODEX_AUTODL_CONFIG_DIR="$tmp_state" \
   bash -lc '
     set -euo pipefail
-    source "$HOME/.codex/clash-autodl-codex.sh"
+    source "$HOME/.codex/clash-codex-autodl.sh"
     printf "http_proxy=%s\n" "${http_proxy:-}"
   ' 2>&1
 )"
@@ -74,6 +74,6 @@ grep -q 'http_proxy=http://127.0.0.1:17900' <<<"$output"
 ! grep -q 'CODEX_RELAY_READY' <<<"$output"
 ! grep -q 'Codex 可用' <<<"$output"
 
-! grep -q 'clash-Autodl-codex 命令已加载' <<<"$output"
+! grep -q 'clash-codex-autodl 命令已加载' <<<"$output"
 ! grep -q '代理地址' <<<"$output"
 ! grep -q 'Mihomo' <<<"$output"

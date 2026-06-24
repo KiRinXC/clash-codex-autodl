@@ -1,4 +1,4 @@
-name: clash-Autodl-codex CI
+name: clash-codex-autodl CI
 
 on:
   push:

@@ -9,7 +9,7 @@ usage() {
   cat <<'USAGE'
 用法: bash bootstrap_codex.sh [CONFIG_FILE]
 
-为 clash-Autodl-codex 安装 Codex CLI、认证和 shell 启动钩子。
+为 clash-codex-autodl 安装 Codex CLI、认证和 shell 启动钩子。
 USAGE
 }
 
@@ -35,7 +35,7 @@ main() {
   write_codex_auth
   ensure_codex_cli
   install_shell_hook
-  log_ok "clash-Autodl-codex Codex 初始化完成"
+  log_ok "clash-codex-autodl Codex 初始化完成"
 }
 
 main "$@"
