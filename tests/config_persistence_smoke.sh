@@ -23,6 +23,7 @@ bash -lc '
   CODEX_PROXY_GROUP="CodexProxy"
   CODEX_MODEL="gpt-5.4"
   CODEX_REVIEW_MODEL="gpt-5.4"
+  AUTO_PROXY_ON_SHELL_START="true"
   AUTO_CODEX_CHECK_ON_SHELL_START="true"
   save_project_config
   grep -q "^CLASH_URL=" "$2/config.sh"
@@ -32,4 +33,5 @@ bash -lc '
   load_project_config "$2/config.sh"
   [ "$CLASH_URL" = "https://example.invalid/sub.yaml" ]
   [ "$CODEX_PROXY_URL" = "http://127.0.0.1:17900" ]
+  [ "$AUTO_PROXY_ON_SHELL_START" = "true" ]
 ' _ "$repo_root" "$tmp_state"

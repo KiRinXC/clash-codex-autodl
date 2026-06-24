@@ -106,15 +106,12 @@ source ~/.codex/clash-autodl-codex.sh
 启动钩子会显示：
 
 ```text
-[INFO] clash-Autodl-codex 命令已加载
-[INFO] 代理: 已开启/未开启
-[INFO] Mihomo: 运行中/未运行
-[INFO] 当前节点: <node name>
-[INFO] Codex 中转站: domestic/overseas <url>
-[OK] Codex 可用
+[OK] 代理: 已开启
+[OK] 当前节点: <node name>
+[OK] Codex 可用 使用中转站: domestic <url>
 ```
 
-如果网络或中转站临时不可用，命令仍会加载，终端会给出失败提示和日志位置。
+代理状态会被持久化；新终端默认恢复开启，只有执行 `proxy_off` 后才会关闭。
 
 ## 重新配置
 

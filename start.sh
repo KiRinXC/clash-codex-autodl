@@ -95,7 +95,7 @@ configure_codex() {
 
 ensure_codex_with_proxy() {
   load_project_config
-  enable_proxy_env
+  proxy_on
   ensure_codex_cli
 }
 
