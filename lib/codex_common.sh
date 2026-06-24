@@ -10,7 +10,7 @@ DEFAULT_MIHOMO_CONTROLLER_URL="http://127.0.0.1:6006"
 DEFAULT_CODEX_PROXY_GROUP="CodexProxy"
 DEFAULT_CODEX_MODEL="gpt-5.4"
 DEFAULT_ACTIVE_RELAY=""
-DEFAULT_AUTO_CODEX_CHECK_ON_SHELL_START="true"
+DEFAULT_AUTO_CODEX_CHECK_ON_SHELL_START="false"
 DEFAULT_AUTO_PROXY_ON_SHELL_START="true"
 
 if [ -z "${CODEX_AUTODL_REPO_ROOT:-}" ]; then
@@ -112,7 +112,6 @@ save_project_config() {
     write_config_value CODEX_MODEL
     write_config_value CODEX_REVIEW_MODEL
     write_config_value AUTO_PROXY_ON_SHELL_START
-    write_config_value AUTO_CODEX_CHECK_ON_SHELL_START
   } > "$tmp_file"
 
   chmod 600 "$tmp_file" 2>/dev/null || true
@@ -583,21 +582,12 @@ startup_codex_status() {
 
   local mode base_url
   mode="$(detect_relay_mode)" || {
-    log_error "Codex 不可用 使用中转站: 未知"
+    log_error "Codex 中转站: 未知"
     return 1
   }
   base_url="$(relay_base_url_for_mode "$mode")" || return 1
 
-  if [ "${AUTO_CODEX_CHECK_ON_SHELL_START}" = "true" ]; then
-    if CODEX_SMOKE_TEST_QUIET="true" codex_smoke_test; then
-      log_ok "Codex 可用 使用中转站: $mode $base_url"
-      return 0
-    fi
-    log_error "Codex 不可用 使用中转站: $mode $base_url"
-    return 1
-  fi
-
-  log_info "Codex 检查已关闭 使用中转站: $mode $base_url"
+  log_ok "Codex 中转站: $mode $base_url"
 }
 
 shell_startup_status() {
@@ -736,7 +726,10 @@ codex_audit_host() {
 
 proxy_pick() {
   load_project_config
-  require_command python3 || return 1
+  if ! command -v python3 >/dev/null 2>&1; then
+    log_error "缺少命令: python3"
+    return 0
+  fi
 
   local tmp_py
   tmp_py="$(mktemp)"
@@ -821,9 +814,8 @@ PY
     rm -f "$tmp_py"
     return 0
   else
-    local status="$?"
     rm -f "$tmp_py"
-    return "$status"
+    return 0
   fi
 }
 

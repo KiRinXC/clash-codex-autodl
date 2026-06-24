@@ -108,10 +108,11 @@ source ~/.codex/clash-autodl-codex.sh
 ```text
 [OK] 代理: 已开启
 [OK] 当前节点: <node name>
-[OK] Codex 可用 使用中转站: domestic <url>
+[OK] Codex 中转站: domestic <url>
 ```
 
 代理状态会被持久化；新终端默认恢复开启，只有执行 `proxy_off` 后才会关闭。
+新终端不会自动运行耗时的 Codex 冒烟测试；需要确认 Codex 是否可用时，手动执行 `codex_verify`。
 
 ## 重新配置
 

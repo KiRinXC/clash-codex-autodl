@@ -5,6 +5,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 tmp_home="$(mktemp -d)"
 tmp_state="$(mktemp -d)"
 fake_bin="$(mktemp -d)"
+codex_called="$tmp_home/codex-called"
 
 cleanup() {
   rm -rf "$tmp_home" "$tmp_state" "$fake_bin"
@@ -27,9 +28,10 @@ AUTO_PROXY_ON_SHELL_START='true'
 AUTO_CODEX_CHECK_ON_SHELL_START='true'
 EOF
 
-cat > "$fake_bin/codex" <<'SH'
+cat > "$fake_bin/codex" <<SH
 #!/usr/bin/env bash
-if [ "${1:-}" = "exec" ]; then
+if [ "\${1:-}" = "exec" ]; then
+  touch '$codex_called'
   echo "CODEX_RELAY_READY"
   exit 0
 fi
@@ -65,10 +67,13 @@ output="$(
 
 grep -q '\[OK\].*代理: 已开启' <<<"$output"
 grep -q '\[OK\].*当前节点: 香港W01' <<<"$output"
-grep -q '\[OK\].*Codex 可用.*使用中转站: domestic https://domestic.example.invalid/api' <<<"$output"
+grep -q '\[OK\].*Codex 中转站: domestic https://domestic.example.invalid/api' <<<"$output"
 grep -q 'http_proxy=http://127.0.0.1:17900' <<<"$output"
+
+[ ! -f "$codex_called" ]
+! grep -q 'CODEX_RELAY_READY' <<<"$output"
+! grep -q 'Codex 可用' <<<"$output"
 
 ! grep -q 'clash-Autodl-codex 命令已加载' <<<"$output"
 ! grep -q '代理地址' <<<"$output"
 ! grep -q 'Mihomo' <<<"$output"
-! grep -q 'Codex 中转站' <<<"$output"
