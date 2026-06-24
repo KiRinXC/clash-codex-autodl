@@ -26,6 +26,14 @@ cat > "$tmp_repo/bin/yq" <<'SH'
 set -euo pipefail
 
 if [ "${1:-}" = "eval" ] && [ "${2:-}" = "-i" ]; then
+  expression="${3:-}"
+  case "$expression" in
+    *'if '*)
+      printf 'fake yq: unsupported conditional expression\n' >&2
+      exit 7
+      ;;
+  esac
+
   config_file="${@: -1}"
   {
     printf 'mixed-port: 7890\n'

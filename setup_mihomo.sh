@@ -196,30 +196,45 @@ PY
 )"
   fi
 
-  CODEX_PROXY_PORT="$proxy_port" \
-  CODEX_MIHOMO_CONTROLLER_BIND="$controller_bind" \
-  CODEX_OVERSEAS_HOST="$overseas_host" "$YQ_BINARY" eval -i '
-    ."mixed-port" = (strenv(CODEX_PROXY_PORT) | tonumber) |
-    .mode = "rule" |
-    ."external-controller" = strenv(CODEX_MIHOMO_CONTROLLER_BIND) |
-    ."external-ui" = "dashboard" |
-    .rules = (
-      if strenv(CODEX_OVERSEAS_HOST) == "" then
-        (.rules // [])
-      else
+  if [ -n "$overseas_host" ]; then
+    CODEX_PROXY_PORT="$proxy_port" \
+    CODEX_MIHOMO_CONTROLLER_BIND="$controller_bind" \
+    CODEX_OVERSEAS_HOST="$overseas_host" "$YQ_BINARY" eval -i '
+      ."mixed-port" = (strenv(CODEX_PROXY_PORT) | tonumber) |
+      .mode = "rule" |
+      ."external-controller" = strenv(CODEX_MIHOMO_CONTROLLER_BIND) |
+      ."external-ui" = "dashboard" |
+      .rules = (
         ["DOMAIN," + strenv(CODEX_OVERSEAS_HOST) + ",CodexProxy"] +
         ((.rules // []) | map(select(. != ("DOMAIN," + strenv(CODEX_OVERSEAS_HOST) + ",CodexProxy"))))
-      end
-    ) |
-    ."proxy-groups" = (
-      [{
-        "name": "CodexProxy",
-        "type": "select",
-        "proxies": ((.proxies // []) | map(.name))
-      }] +
-      ((."proxy-groups" // []) | map(select(.name != "CodexProxy")))
-    )
-  ' "$CONFIG_FILE"
+      ) |
+      ."proxy-groups" = (
+        [{
+          "name": "CodexProxy",
+          "type": "select",
+          "proxies": ((.proxies // []) | map(.name))
+        }] +
+        ((."proxy-groups" // []) | map(select(.name != "CodexProxy")))
+      )
+    ' "$CONFIG_FILE"
+  else
+    CODEX_PROXY_PORT="$proxy_port" \
+    CODEX_MIHOMO_CONTROLLER_BIND="$controller_bind" "$YQ_BINARY" eval -i '
+      ."mixed-port" = (strenv(CODEX_PROXY_PORT) | tonumber) |
+      .mode = "rule" |
+      ."external-controller" = strenv(CODEX_MIHOMO_CONTROLLER_BIND) |
+      ."external-ui" = "dashboard" |
+      .rules = (.rules // []) |
+      ."proxy-groups" = (
+        [{
+          "name": "CodexProxy",
+          "type": "select",
+          "proxies": ((.proxies // []) | map(.name))
+        }] +
+        ((."proxy-groups" // []) | map(select(.name != "CodexProxy")))
+      )
+    ' "$CONFIG_FILE"
+  fi
 
   proxy_count="$("$YQ_BINARY" eval '."proxy-groups"[] | select(.name == "CodexProxy") | (.proxies // []) | length' "$CONFIG_FILE" 2>/dev/null || echo 0)"
   if [ "${proxy_count:-0}" -eq 0 ]; then

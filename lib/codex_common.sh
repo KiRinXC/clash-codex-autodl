@@ -366,23 +366,16 @@ PY
     ."external-controller" = (.["external-controller"] // "127.0.0.1:6006") |
     ."external-ui" = (.["external-ui"] // "dashboard") |
     .rules = (
-      if strenv(CODEX_OVERSEAS_HOST) == "" then
-        (.rules // [])
-      else
-        ["DOMAIN," + strenv(CODEX_OVERSEAS_HOST) + ",CodexProxy"] +
-        ((.rules // []) | map(select(. != ("DOMAIN," + strenv(CODEX_OVERSEAS_HOST) + ",CodexProxy"))))
-      end
+      ["DOMAIN," + strenv(CODEX_OVERSEAS_HOST) + ",CodexProxy"] +
+      ((.rules // []) | map(select(. != ("DOMAIN," + strenv(CODEX_OVERSEAS_HOST) + ",CodexProxy"))))
     ) |
     ."proxy-groups" = (
-      if ((."proxy-groups" // []) | map(.name) | index("CodexProxy")) == null then
-        ([{
-          "name": "CodexProxy",
-          "type": "select",
-          "proxies": ((.proxies // []) | map(.name))
-        }] + (."proxy-groups" // []))
-      else
-        (."proxy-groups" // [])
-      end
+      [{
+        "name": "CodexProxy",
+        "type": "select",
+        "proxies": ((.proxies // []) | map(.name))
+      }] +
+      ((."proxy-groups" // []) | map(select(.name != "CodexProxy")))
     )
   ' "$config_file"
 
