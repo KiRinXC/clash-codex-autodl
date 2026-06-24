@@ -16,3 +16,4 @@ subconverter/
 .ipynb_checkpoints/
 test_clash.sh
 CLAUDE.md
+.worktrees/
