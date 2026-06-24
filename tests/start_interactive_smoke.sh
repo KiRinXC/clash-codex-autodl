@@ -4,22 +4,28 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 tmp_home="$(mktemp -d)"
 tmp_state="$(mktemp -d)"
+tmp_dir="$(mktemp -d)"
+work_dir="$tmp_dir/work"
 fake_bin="$(mktemp -d)"
 
 cleanup() {
-  if [ -f "$repo_root/mihomo.pid" ]; then
-    pid="$(cat "$repo_root/mihomo.pid" 2>/dev/null || true)"
+  if [ -f "$work_dir/mihomo.pid" ]; then
+    pid="$(cat "$work_dir/mihomo.pid" 2>/dev/null || true)"
     if [ -n "${pid:-}" ] && kill -0 "$pid" >/dev/null 2>&1; then
       kill "$pid" >/dev/null 2>&1 || true
     fi
   fi
-  rm -rf "$tmp_home" "$tmp_state" "$fake_bin" "$repo_root/bin" "$repo_root/conf" "$repo_root/logs" "$repo_root/mihomo.pid"
+  rm -rf "$tmp_home" "$tmp_state" "$fake_bin" "$tmp_dir"
 }
 trap cleanup EXIT
 
-mkdir -p "$repo_root/bin" "$fake_bin"
+mkdir -p "$work_dir/lib" "$work_dir/bin" "$fake_bin"
+cp "$repo_root/start.sh" "$work_dir/start.sh"
+cp "$repo_root/setup_mihomo.sh" "$work_dir/setup_mihomo.sh"
+cp "$repo_root/converter.sh" "$work_dir/converter.sh"
+cp "$repo_root/lib/codex_common.sh" "$work_dir/lib/codex_common.sh"
 
-cat > "$repo_root/bin/yq" <<'SH'
+cat > "$work_dir/bin/yq" <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -56,16 +62,16 @@ fi
 
 exit 0
 SH
-chmod +x "$repo_root/bin/yq"
+chmod +x "$work_dir/bin/yq"
 
-cat > "$repo_root/bin/mihomo-linux-amd64" <<'SH'
+cat > "$work_dir/bin/mihomo-linux-amd64" <<'SH'
 #!/usr/bin/env bash
 trap 'exit 0' TERM INT
 while :; do
   sleep 1
 done
 SH
-chmod +x "$repo_root/bin/mihomo-linux-amd64"
+chmod +x "$work_dir/bin/mihomo-linux-amd64"
 
 cat > "$fake_bin/curl" <<'SH'
 #!/usr/bin/env bash
@@ -122,7 +128,7 @@ output="$(
   HOME="$tmp_home" \
   PATH="$fake_bin:$PATH" \
   CODEX_AUTODL_CONFIG_DIR="$tmp_state" \
-  bash "$repo_root/start.sh" <<'EOF'
+  bash "$work_dir/start.sh" <<'EOF'
 https://subscription.example.invalid/clash.yaml
 https://domestic.example.invalid/api
 https://overseas.example.invalid/api
@@ -132,6 +138,7 @@ EOF
 
 grep -q 'proxy_status' <<<"$output"
 grep -q 'codex_use_domestic' <<<"$output"
+grep -q 'source ~/.codex/clash-codex-autodl.sh' <<<"$output"
 grep -q "CLASH_URL='https://subscription.example.invalid/clash.yaml'" "$tmp_state/config.sh"
 grep -q "CODEX_ACTIVE_RELAY='domestic'" "$tmp_state/config.sh"
 grep -q "AUTO_PROXY_ON_SHELL_START='true'" "$tmp_state/config.sh"

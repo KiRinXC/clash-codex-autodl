@@ -12,7 +12,10 @@
 git clone https://github.com/KiRinXC/clash-codex-autodl.git
 cd clash-codex-autodl
 bash start.sh
+source ~/.codex/clash-codex-autodl.sh
 ```
+
+最后一行用于让当前终端立即识别 `proxy_*` 和 `codex_*` 命令；新开的终端会自动加载。
 
 脚本会依次提示你输入：
 

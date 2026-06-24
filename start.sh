@@ -99,6 +99,7 @@ ensure_codex_with_proxy() {
 }
 
 main() {
+  show_source_hint=false
   case "${1:-}" in
     --help | -h)
       usage
@@ -108,15 +109,18 @@ main() {
       ensure_codex_with_proxy
       configure_codex true
       codex_verify
+      show_source_hint=true
       ;;
     --reconfigure-clash)
       configure_clash true
       proxy_status
+      show_source_hint=true
       ;;
     --reconfigure-codex)
       ensure_codex_with_proxy
       configure_codex true
       codex_verify
+      show_source_hint=true
       ;;
     "")
       configure_clash false
@@ -124,6 +128,7 @@ main() {
       ensure_codex_with_proxy
       configure_codex false
       codex_verify
+      show_source_hint=true
       ;;
     *)
       usage
@@ -133,3 +138,6 @@ main() {
 }
 
 main "$@"
+if [ "${show_source_hint:-false}" = "true" ]; then
+  log_info "要在当前终端立即使用命令，请运行: source ~/.codex/clash-codex-autodl.sh"
+fi
