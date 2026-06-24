@@ -232,14 +232,14 @@ disable_proxy_env() {
   log_ok "代理已关闭"
 }
 
-proxy_on() {
+function proxy-on {
   load_project_config
   AUTO_PROXY_ON_SHELL_START="true"
   save_project_config
   enable_proxy_env
 }
 
-proxy_off() {
+function proxy-off {
   load_project_config
   AUTO_PROXY_ON_SHELL_START="false"
   save_project_config
@@ -271,7 +271,7 @@ PY
   rm -f "$tmp_py"
 }
 
-proxy_status() {
+function proxy-status {
   load_project_config
 
   log_info "代理: $(proxy_env_is_active && printf '已开启' || printf '未开启')"
@@ -631,16 +631,16 @@ print_daily_commands() {
   cat <<'TEXT'
 
 代理命令:
-  proxy_on
-  proxy_off
-  proxy_pick
-  proxy_status
+  proxy-on
+  proxy-off
+  proxy-pick
+  proxy-status
 
 Codex 中转站命令:
-  codex_use_domestic
-  codex_use_overseas
-  codex_relay_status
-  codex_verify
+  codex-use-in
+  codex-use-out
+  codex-status
+  codex-verify
 TEXT
 }
 
@@ -673,16 +673,16 @@ codex_switch_relay_mode() {
   write_codex_config_for_mode "$mode"
 }
 
-codex_use_domestic() {
+function codex-use-in {
   codex_switch_relay_mode domestic
 }
 
-codex_use_overseas() {
+function codex-use-out {
   codex_switch_relay_mode overseas
   inject_codex_overseas_rule_into_mihomo_config || true
 }
 
-codex_relay_status() {
+function codex-status {
   load_project_config
 
   local mode base_url
@@ -719,11 +719,11 @@ codex_audit_host() {
     fi
   done
 
-  proxy_status
-  codex_relay_status || true
+  proxy-status
+  codex-status || true
 }
 
-proxy_pick() {
+function proxy-pick {
   load_project_config
   if ! command -v python3 >/dev/null 2>&1; then
     log_error "缺少命令: python3"
@@ -904,8 +904,8 @@ codex_smoke_test() {
   return 1
 }
 
-codex_verify() {
+function codex-verify {
   load_project_config
-  codex_relay_status
+  codex-status
   codex_smoke_test
 }

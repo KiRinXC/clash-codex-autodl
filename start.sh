@@ -89,12 +89,12 @@ configure_codex() {
   validate_codex_relay_urls
   save_project_config
   write_codex_auth
-  codex_use_domestic
+  codex-use-in
 }
 
 ensure_codex_with_proxy() {
   load_project_config
-  proxy_on
+  proxy-on
   ensure_codex_cli
 }
 
@@ -108,26 +108,26 @@ main() {
       configure_clash true
       ensure_codex_with_proxy
       configure_codex true
-      codex_verify
+      codex-verify
       show_source_hint=true
       ;;
     --reconfigure-clash)
       configure_clash true
-      proxy_status
+      proxy-status
       show_source_hint=true
       ;;
     --reconfigure-codex)
       ensure_codex_with_proxy
       configure_codex true
-      codex_verify
+      codex-verify
       show_source_hint=true
       ;;
     "")
       configure_clash false
-      proxy_status || true
+      proxy-status || true
       ensure_codex_with_proxy
       configure_codex false
-      codex_verify
+      codex-verify
       show_source_hint=true
       ;;
     *)

@@ -70,7 +70,7 @@ sleep 1
 output="$(
   CODEX_MIHOMO_CONTROLLER_URL="$controller_base" \
   CODEX_PROXY_GROUP="CodexProxy" \
-  bash -lc "source '$repo_root/lib/codex_common.sh'; printf '2\n' | proxy_pick" 2>&1
+  bash -lc "source '$repo_root/lib/codex_common.sh'; printf '2\n' | proxy-pick" 2>&1
 )"
 
 kill "$server_pid" >/dev/null 2>&1 || true

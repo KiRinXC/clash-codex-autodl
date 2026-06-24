@@ -29,10 +29,10 @@ bash -lc '
   set -euo pipefail
   source "$1/lib/codex_common.sh"
   load_project_config "$2/config.sh"
-  proxy_on
+  proxy-on
   [ "${http_proxy:-}" = "http://127.0.0.1:17900" ]
   [ ! -f "$HOME/.codex/config.toml" ]
-  codex_use_overseas
+  codex-use-out
   [ "${http_proxy:-}" = "http://127.0.0.1:17900" ]
   [ "$CODEX_ACTIVE_RELAY" = "overseas" ]
 ' _ "$repo_root" "$tmp_state"

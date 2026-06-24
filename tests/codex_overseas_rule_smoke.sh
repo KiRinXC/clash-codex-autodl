@@ -62,7 +62,7 @@ output="$(
     CODEX_OVERSEAS_BASE_URL='https://overseas.example.invalid/api'
     CODEX_DOMESTIC_BASE_URL='https://domestic.example.invalid/api'
     save_project_config
-    codex_use_overseas
+    codex-use-out
   " 2>&1
 )"
 

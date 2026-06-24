@@ -19,15 +19,15 @@ load_project_config
 
 case "$mode" in
   current | auto)
-    codex_verify
+    codex-verify
     ;;
   domestic)
-    codex_use_domestic
-    codex_verify
+    codex-use-in
+    codex-verify
     ;;
   overseas)
-    codex_use_overseas
-    codex_verify
+    codex-use-out
+    codex-verify
     ;;
   *)
     log_error "验证模式无效: $mode"

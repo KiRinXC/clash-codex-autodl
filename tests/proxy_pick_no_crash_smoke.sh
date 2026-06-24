@@ -9,7 +9,7 @@ output="$(
   bash -lc "
     set -e
     source '$repo_root/lib/codex_common.sh'
-    proxy_pick
+    proxy-pick
     echo after-proxy-pick
   " 2>&1
 )"

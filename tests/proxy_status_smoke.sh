@@ -59,7 +59,7 @@ output="$(
     CODEX_PROXY_GROUP='CodexProxy'
     save_project_config
     export http_proxy='http://127.0.0.1:7890'
-    proxy_status
+    proxy-status
   " 2>&1
 )"
 

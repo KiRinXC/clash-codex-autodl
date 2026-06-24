@@ -15,7 +15,7 @@ bash start.sh
 source ~/.codex/clash-codex-autodl.sh
 ```
 
-最后一行用于让当前终端立即识别 `proxy_*` 和 `codex_*` 命令；新开的终端会自动加载。
+最后一行用于让当前终端立即识别 `proxy-*` 和 `codex-*` 命令；新开的终端会自动加载。
 
 脚本会依次提示你输入：
 
@@ -53,47 +53,47 @@ OpenAI API key
 代理命令只控制当前 shell 的代理环境变量和 Mihomo 节点，不会切换 Codex 中转站。
 
 ```bash
-proxy_on
-proxy_off
-proxy_pick
-proxy_status
+proxy-on
+proxy-off
+proxy-pick
+proxy-status
 ```
 
-- `proxy_on`：为当前 shell 设置 `http_proxy`、`https_proxy` 等代理环境变量。
-- `proxy_off`：移除当前 shell 的代理环境变量。
-- `proxy_pick`：交互式切换 `CodexProxy` 选择组里的节点。
-- `proxy_status`：显示代理是否开启、Mihomo 是否运行、代理地址和当前节点。
+- `proxy-on`：为当前 shell 设置 `http_proxy`、`https_proxy` 等代理环境变量。
+- `proxy-off`：移除当前 shell 的代理环境变量。
+- `proxy-pick`：交互式切换 `CodexProxy` 选择组里的节点。
+- `proxy-status`：显示代理是否开启、Mihomo 是否运行、代理地址和当前节点。
 
 ## Codex 中转站命令
 
 Codex 中转站命令只修改 `~/.codex/config.toml`，不会开启或关闭代理。
 
 ```bash
-codex_use_domestic
-codex_use_overseas
-codex_relay_status
-codex_verify
+codex-use-in
+codex-use-out
+codex-status
+codex-verify
 ```
 
-- `codex_use_domestic`：让 Codex 使用国内/直连中转站。
-- `codex_use_overseas`：让 Codex 使用国外/代理中转站。
-- `codex_relay_status`：显示当前 Codex 使用的中转站。
-- `codex_verify`：运行 Codex 冒烟测试。
+- `codex-use-in`：让 Codex 使用国内/直连中转站。
+- `codex-use-out`：让 Codex 使用国外/代理中转站。
+- `codex-status`：显示当前 Codex 使用的中转站。
+- `codex-verify`：运行 Codex 冒烟测试。
 
 如果你想通过代理访问国外中转站，通常需要手动组合：
 
 ```bash
-proxy_on
-codex_use_overseas
-codex_verify
+proxy-on
+codex-use-out
+codex-verify
 ```
 
 如果你想回到直连：
 
 ```bash
-proxy_off
-codex_use_domestic
-codex_verify
+proxy-off
+codex-use-in
+codex-verify
 ```
 
 ## 新终端自动检查
@@ -112,8 +112,8 @@ source ~/.codex/clash-codex-autodl.sh
 [OK] Codex 中转站: domestic <url>
 ```
 
-代理状态会被持久化；新终端默认恢复开启，只有执行 `proxy_off` 后才会关闭。
-新终端不会自动运行耗时的 Codex 冒烟测试；需要确认 Codex 是否可用时，手动执行 `codex_verify`。
+代理状态会被持久化；新终端默认恢复开启，只有执行 `proxy-off` 后才会关闭。
+新终端不会自动运行耗时的 Codex 冒烟测试；需要确认 Codex 是否可用时，手动执行 `codex-verify`。
 
 ## 重新配置
 

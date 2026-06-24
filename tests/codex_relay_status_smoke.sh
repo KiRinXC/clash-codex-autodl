@@ -18,7 +18,7 @@ output="$(
     CODEX_OVERSEAS_BASE_URL='https://overseas.example.invalid/api'
     CODEX_ACTIVE_RELAY='domestic'
     save_project_config
-    codex_relay_status
+    codex-status
   " 2>&1
 )"
 

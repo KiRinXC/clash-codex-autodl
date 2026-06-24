@@ -17,11 +17,11 @@ bash -lc '
   source "$1/lib/codex_common.sh"
 
   CODEX_PROXY_URL="http://127.0.0.1:17900"
-  proxy_on >/dev/null
+  proxy-on >/dev/null
   [ "${http_proxy:-}" = "http://127.0.0.1:17900" ]
   grep -q "^AUTO_PROXY_ON_SHELL_START='\''true'\''" "$2/config.sh"
 
-  proxy_off >/dev/null
+  proxy-off >/dev/null
   [ -z "${http_proxy:-}" ]
   grep -q "^AUTO_PROXY_ON_SHELL_START='\''false'\''" "$2/config.sh"
 ' _ "$repo_root" "$tmp_state"

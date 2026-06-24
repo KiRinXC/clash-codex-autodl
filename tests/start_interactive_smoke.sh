@@ -136,8 +136,8 @@ test-api-key
 EOF
 )"
 
-grep -q 'proxy_status' <<<"$output"
-grep -q 'codex_use_domestic' <<<"$output"
+grep -q 'proxy-status' <<<"$output"
+grep -q 'codex-use-in' <<<"$output"
 grep -q 'source ~/.codex/clash-codex-autodl.sh' <<<"$output"
 grep -q "CLASH_URL='https://subscription.example.invalid/clash.yaml'" "$tmp_state/config.sh"
 grep -q "CODEX_ACTIVE_RELAY='domestic'" "$tmp_state/config.sh"
