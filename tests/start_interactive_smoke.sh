@@ -86,7 +86,7 @@ done
 
 if [ -n "$output_file" ]; then
   if [ "${output_file##*/}" = "geoip.metadb" ]; then
-    dd if=/dev/zero of="$output_file" bs=1048576 count=2 >/dev/null 2>&1
+    dd if=/dev/zero of="$output_file" bs=1048576 count=6 >/dev/null 2>&1
     exit 0
   fi
 

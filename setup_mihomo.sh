@@ -153,7 +153,7 @@ install_mihomo() {
 
 geoip_metadb_is_ready() {
   local file="$1"
-  local min_bytes="${CODEX_GEOIP_METADB_MIN_BYTES:-1048576}"
+  local min_bytes="${CODEX_GEOIP_METADB_MIN_BYTES:-5242880}"
   local size
 
   if [ ! -f "$file" ]; then

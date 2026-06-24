@@ -89,7 +89,7 @@ done
 
 if [ -n "$output_file" ]; then
   if [ "${output_file##*/}" = "geoip.metadb" ]; then
-    dd if=/dev/zero of="$output_file" bs=1048576 count=2 >/dev/null 2>&1
+    dd if=/dev/zero of="$output_file" bs=1048576 count=6 >/dev/null 2>&1
     exit 0
   fi
 
@@ -117,9 +117,13 @@ export CODEX_PROXY_URL='http://127.0.0.1:17890'
 export CODEX_MIHOMO_CONTROLLER_URL='http://127.0.0.1:16006'
 EOF
 
+mkdir -p "$work_dir/conf"
+dd if=/dev/zero of="$work_dir/conf/geoip.metadb" bs=1048576 count=2 >/dev/null 2>&1
+
 PATH="$fake_bin:$PATH" EXPECTED_PROXY_PORT=17890 bash "$work_dir/setup_mihomo.sh" "$tmp_dir/.env"
 
 grep -qx 'mixed-port: 17890' "$work_dir/conf/config.yaml"
 grep -qx 'external-controller: 127.0.0.1:16006' "$work_dir/conf/config.yaml"
 grep -q '^overseas-host:' "$work_dir/conf/config.yaml"
-test -s "$work_dir/conf/geoip.metadb"
+geoip_size="$(wc -c < "$work_dir/conf/geoip.metadb" | tr -d '[:space:]')"
+[ "$geoip_size" -ge 5242880 ]
