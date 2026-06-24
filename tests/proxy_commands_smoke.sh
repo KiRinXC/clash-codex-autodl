@@ -2,7 +2,6 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-bootstrap="$repo_root/bootstrap_codex.sh"
 common="$repo_root/lib/codex_common.sh"
 
 grep -q 'proxy_on()' "$common"

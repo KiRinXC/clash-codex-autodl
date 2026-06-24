@@ -327,6 +327,68 @@ EOF
   log_ok "Codex 中转站已切换到 $mode: $base_url"
 }
 
+inject_codex_overseas_rule_into_mihomo_config() {
+  local config_file="$CODEX_AUTODL_REPO_ROOT/conf/config.yaml"
+  local yq_binary="$CODEX_AUTODL_REPO_ROOT/bin/yq"
+  local overseas_host
+
+  load_project_config
+
+  if [ -z "${CODEX_OVERSEAS_BASE_URL:-}" ]; then
+    log_warn "未配置 CODEX_OVERSEAS_BASE_URL，跳过 Mihomo 海外规则更新"
+    return 0
+  fi
+
+  if [ ! -f "$config_file" ]; then
+    log_warn "未找到 Mihomo 配置文件: $config_file"
+    return 0
+  fi
+
+  if [ ! -x "$yq_binary" ]; then
+    log_warn "未找到 yq 工具: $yq_binary"
+    return 0
+  fi
+
+  overseas_host="$(python3 - "$CODEX_OVERSEAS_BASE_URL" <<'PY'
+import sys
+from urllib.parse import urlparse
+
+host = urlparse(sys.argv[1]).hostname
+if not host:
+    raise SystemExit(1)
+print(host)
+PY
+)"
+
+  CODEX_OVERSEAS_HOST="$overseas_host" "$yq_binary" eval -i '
+    ."mixed-port" = (.["mixed-port"] // 7890) |
+    .mode = "rule" |
+    ."external-controller" = (.["external-controller"] // "127.0.0.1:6006") |
+    ."external-ui" = (.["external-ui"] // "dashboard") |
+    .rules = (
+      if strenv(CODEX_OVERSEAS_HOST) == "" then
+        (.rules // [])
+      else
+        ["DOMAIN," + strenv(CODEX_OVERSEAS_HOST) + ",CodexProxy"] +
+        ((.rules // []) | map(select(. != ("DOMAIN," + strenv(CODEX_OVERSEAS_HOST) + ",CodexProxy"))))
+      end
+    ) |
+    ."proxy-groups" = (
+      if ((."proxy-groups" // []) | map(.name) | index("CodexProxy")) == null then
+        ([{
+          "name": "CodexProxy",
+          "type": "select",
+          "proxies": ((.proxies // []) | map(.name))
+        }] + (."proxy-groups" // []))
+      else
+        (."proxy-groups" // [])
+      end
+    )
+  ' "$config_file"
+
+  log_ok "已更新 Mihomo 海外中转规则: $overseas_host"
+}
+
 json_escape() {
   local value="${1:-}"
   value="${value//\\/\\\\}"
@@ -465,6 +527,7 @@ codex_use_domestic() {
 
 codex_use_overseas() {
   codex_switch_relay_mode overseas
+  inject_codex_overseas_rule_into_mihomo_config || true
 }
 
 codex_relay_status() {
