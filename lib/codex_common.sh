@@ -432,7 +432,80 @@ write_codex_auth() {
   log_ok "Codex 认证已写入 ~/.codex/auth.json"
 }
 
+ensure_local_bin_on_path() {
+  case ":$PATH:" in
+    *":$HOME/.local/bin:"*) ;;
+    *) export PATH="$HOME/.local/bin:$PATH" ;;
+  esac
+}
+
+codex_release_archive_name() {
+  local machine
+
+  machine="$(uname -m)"
+  case "$machine" in
+    x86_64 | amd64)
+      printf '%s\n' "codex-x86_64-unknown-linux-musl.tar.gz"
+      ;;
+    aarch64 | arm64)
+      printf '%s\n' "codex-aarch64-unknown-linux-musl.tar.gz"
+      ;;
+    *)
+      log_warn "不支持通过 GitHub Release 自动安装 Codex CLI 的 CPU 架构: $machine"
+      return 1
+      ;;
+  esac
+}
+
+install_codex_cli_from_github_release() {
+  local archive_name
+  local github_path
+  local mirror
+  local url
+  local tmp_dir
+  local archive_file
+  local extract_dir
+  local codex_binary
+  local mirrors
+
+  command -v curl >/dev/null 2>&1 || return 1
+  command -v tar >/dev/null 2>&1 || return 1
+
+  archive_name="$(codex_release_archive_name)" || return 1
+  github_path="/openai/codex/releases/latest/download/${archive_name}"
+  mirrors="ghfast.top/https://github.com github.com kkgithub.com gitclone.com"
+  tmp_dir="$(mktemp -d)"
+  archive_file="$tmp_dir/$archive_name"
+  extract_dir="$tmp_dir/extract"
+  mkdir -p "$extract_dir" "$HOME/.local/bin"
+
+  for mirror in $mirrors; do
+    url="https://${mirror}${github_path}"
+    log_info "正在从 $mirror 下载 Codex CLI"
+    if curl -fL --retry 3 --connect-timeout 15 --max-time 180 -o "$archive_file" "$url"; then
+      rm -rf "$extract_dir"
+      mkdir -p "$extract_dir"
+      if tar -xzf "$archive_file" -C "$extract_dir"; then
+        codex_binary="$(find "$extract_dir" -type f -name 'codex*' | head -n 1)"
+        if [ -n "$codex_binary" ]; then
+          cp "$codex_binary" "$HOME/.local/bin/codex"
+          chmod +x "$HOME/.local/bin/codex"
+          rm -rf "$tmp_dir"
+          ensure_local_bin_on_path
+          log_ok "已通过 GitHub Release 安装 Codex CLI: $HOME/.local/bin/codex"
+          return 0
+        fi
+      fi
+    fi
+  done
+
+  rm -rf "$tmp_dir"
+  return 1
+}
+
 ensure_codex_cli() {
+  ensure_local_bin_on_path
+
   if command -v codex >/dev/null 2>&1; then
     log_ok "已找到 Codex CLI: $(command -v codex)"
     return 0
@@ -448,6 +521,12 @@ ensure_codex_cli() {
     fi
     log_warn "独立安装器没有生成可用的 codex 命令"
   fi
+
+  log_info "尝试从 GitHub Release 下载 Codex CLI"
+  if install_codex_cli_from_github_release; then
+    return 0
+  fi
+  log_warn "GitHub Release 没有生成可用的 codex 命令"
 
   log_info "尝试使用 npm 方式安装 @openai/codex"
   if command -v npm >/dev/null 2>&1; then
@@ -472,6 +551,7 @@ install_shell_hook() {
 # 由 clash-Autodl-codex 管理
 export CODEX_AUTODL_REPO_ROOT="$CODEX_AUTODL_REPO_ROOT"
 export CODEX_AUTODL_CONFIG_DIR="$config_dir"
+export PATH="$HOME/.local/bin:\$PATH"
 
 # shellcheck source=/dev/null
 if [ -f "\${CODEX_AUTODL_REPO_ROOT}/lib/codex_common.sh" ]; then

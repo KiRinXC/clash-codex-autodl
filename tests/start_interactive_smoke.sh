@@ -136,4 +136,5 @@ grep -q "CLASH_URL='https://subscription.example.invalid/clash.yaml'" "$tmp_stat
 grep -q "CODEX_ACTIVE_RELAY='domestic'" "$tmp_state/config.sh"
 grep -q '"OPENAI_API_KEY": "test-api-key"' "$tmp_home/.codex/auth.json"
 grep -q 'base_url = "https://domestic.example.invalid/api"' "$tmp_home/.codex/config.toml"
+grep -q '\.local/bin:\$PATH' "$tmp_home/.codex/clash-autodl-codex.sh"
 grep -q 'clash-autodl-codex.sh' "$tmp_home/.bashrc"
