@@ -11,6 +11,7 @@ BIN_DIR="$SCRIPT_DIR/bin"
 CONF_DIR="$SCRIPT_DIR/conf"
 LOG_DIR="$SCRIPT_DIR/logs"
 CONFIG_FILE="$CONF_DIR/config.yaml"
+GEOIP_METADB_FILE="$CONF_DIR/geoip.metadb"
 YQ_BINARY="$BIN_DIR/yq"
 MIHOMO_BINARY=""
 
@@ -148,6 +149,43 @@ install_mihomo() {
   chmod +x "$target_file"
   rm -f "$temp_file"
   MIHOMO_BINARY="$target_file"
+}
+
+geoip_metadb_is_ready() {
+  local file="$1"
+  local min_bytes="${CODEX_GEOIP_METADB_MIN_BYTES:-1048576}"
+  local size
+
+  if [ ! -f "$file" ]; then
+    return 1
+  fi
+
+  size="$(wc -c < "$file" 2>/dev/null | tr -d '[:space:]')" || return 1
+  case "$size" in
+    ''|*[!0-9]*) return 1 ;;
+  esac
+
+  [ "$size" -ge "$min_bytes" ]
+}
+
+install_geoip_metadb() {
+  mkdir -p "$CONF_DIR"
+
+  if geoip_metadb_is_ready "$GEOIP_METADB_FILE"; then
+    return 0
+  fi
+
+  if [ -f "$GEOIP_METADB_FILE" ]; then
+    log_warn "Mihomo GeoIP 数据库不完整，正在重新下载"
+    rm -f "$GEOIP_METADB_FILE"
+  fi
+
+  download_github_file "/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.metadb" "$GEOIP_METADB_FILE" "Mihomo GeoIP 数据库"
+
+  if ! geoip_metadb_is_ready "$GEOIP_METADB_FILE"; then
+    log_error "Mihomo GeoIP 数据库下载不完整"
+    return 1
+  fi
 }
 
 download_subscription() {
@@ -308,4 +346,5 @@ download_subscription
 convert_if_needed
 inject_codex_rules
 install_mihomo
+install_geoip_metadb
 start_mihomo "$MIHOMO_BINARY"

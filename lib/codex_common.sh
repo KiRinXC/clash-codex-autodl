@@ -157,19 +157,50 @@ proxy_env_is_active() {
 
 local_proxy_is_listening() {
   local proxy_url="${1:-$CODEX_PROXY_URL}"
-  local host_port port
+  local host_port host port
 
   host_port="${proxy_url#http://}"
   host_port="${host_port#https://}"
+  host_port="${host_port%%/*}"
   port="${host_port##*:}"
+  host="${host_port%:*}"
+
+  if [ -z "$port" ] || [ "$port" = "$host_port" ]; then
+    return 1
+  fi
+
+  if [ -z "$host" ] || [ "$host" = "$host_port" ]; then
+    host="127.0.0.1"
+  fi
+  host="${host#[}"
+  host="${host%]}"
 
   if command -v ss >/dev/null 2>&1; then
-    ss -ltn 2>/dev/null | grep -q ":${port}[[:space:]]"
-  elif command -v lsof >/dev/null 2>&1; then
-    lsof -i ":${port}" >/dev/null 2>&1
-  else
-    curl -sS --max-time 2 -x "$proxy_url" https://example.com >/dev/null 2>&1
+    ss -ltn 2>/dev/null | grep -q ":${port}[[:space:]]" && return 0
   fi
+
+  if command -v lsof >/dev/null 2>&1; then
+    lsof -iTCP:"${port}" -sTCP:LISTEN >/dev/null 2>&1 && return 0
+  fi
+
+  if command -v python3 >/dev/null 2>&1; then
+    PROXY_LISTEN_HOST="$host" PROXY_LISTEN_PORT="$port" python3 - <<'PY' && return 0
+import os
+import socket
+import sys
+
+host = os.environ["PROXY_LISTEN_HOST"]
+port = int(os.environ["PROXY_LISTEN_PORT"])
+
+try:
+    with socket.create_connection((host, port), timeout=1):
+        pass
+except OSError:
+    sys.exit(1)
+PY
+  fi
+
+  curl -sS --max-time 2 -x "$proxy_url" https://example.com >/dev/null 2>&1
 }
 
 proxy_process_is_running() {
