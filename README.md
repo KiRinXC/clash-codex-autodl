@@ -4,6 +4,9 @@
 
 新租的机器通常没有 Clash，也没有 Codex。这个项目的目标是让你通过一个交互式脚本完成初始化，然后在之后的终端里直接使用代理和 Codex 中转站切换命令。
 
+本项目参考并致谢 [glerium/clash-for-AutoDL](https://github.com/glerium/clash-for-AutoDL)。
+在其思路上，我把流程整理成了更偏终端交互的 AutoDL 初始化、代理切换和 Codex 配置体验。
+
 ## 快速开始
 
 在目标服务器上执行：
