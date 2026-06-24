@@ -327,6 +327,109 @@ EOF
   log_ok "Codex 中转站已切换到 $mode: $base_url"
 }
 
+json_escape() {
+  local value="${1:-}"
+  value="${value//\\/\\\\}"
+  value="${value//\"/\\\"}"
+  printf '%s' "$value"
+}
+
+write_codex_auth() {
+  if [ -z "${OPENAI_API_KEY:-}" ]; then
+    log_error "OPENAI_API_KEY 为空，无法写入 Codex 认证。"
+    return 1
+  fi
+
+  mkdir -p "$HOME/.codex"
+  printf '{\n  "OPENAI_API_KEY": "%s"\n}\n' "$(json_escape "$OPENAI_API_KEY")" > "$HOME/.codex/auth.json"
+  chmod 600 "$HOME/.codex/auth.json" 2>/dev/null || true
+  log_ok "Codex 认证已写入 ~/.codex/auth.json"
+}
+
+ensure_codex_cli() {
+  if command -v codex >/dev/null 2>&1; then
+    log_ok "已找到 Codex CLI: $(command -v codex)"
+    return 0
+  fi
+
+  log_info "未找到 Codex CLI，尝试官方独立安装器"
+  if command -v curl >/dev/null 2>&1; then
+    if curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 sh; then
+      if command -v codex >/dev/null 2>&1; then
+        log_ok "已通过官方独立安装器安装 Codex CLI"
+        return 0
+      fi
+    fi
+    log_warn "独立安装器没有生成可用的 codex 命令"
+  fi
+
+  log_info "尝试使用 npm 方式安装 @openai/codex"
+  if command -v npm >/dev/null 2>&1; then
+    npm install -g @openai/codex
+    if command -v codex >/dev/null 2>&1; then
+      log_ok "已通过 npm 安装 Codex CLI"
+      return 0
+    fi
+  fi
+
+  log_error "缺少 Codex CLI。请先安装 Codex，或者安装 Node.js/npm 后重新执行脚本。"
+  return 1
+}
+
+install_shell_hook() {
+  local hook_file="$HOME/.codex/clash-autodl-codex.sh"
+  local config_dir
+
+  config_dir="$(project_config_dir)"
+  mkdir -p "$HOME/.codex"
+  cat > "$hook_file" <<EOF
+# 由 clash-Autodl-codex 管理
+export CODEX_AUTODL_REPO_ROOT="$CODEX_AUTODL_REPO_ROOT"
+export CODEX_AUTODL_CONFIG_DIR="$config_dir"
+
+# shellcheck source=/dev/null
+if [ -f "\${CODEX_AUTODL_REPO_ROOT}/lib/codex_common.sh" ]; then
+  . "\${CODEX_AUTODL_REPO_ROOT}/lib/codex_common.sh"
+  load_project_config
+  log_info "clash-Autodl-codex 命令已加载"
+  proxy_status || true
+  codex_relay_status || true
+  if [ "\${AUTO_CODEX_CHECK_ON_SHELL_START}" = "true" ]; then
+    codex_verify || true
+  fi
+else
+  printf '\\033[1;33m[WARN]\\033[0m clash-Autodl-codex 仓库不存在: %s\\n' "\${CODEX_AUTODL_REPO_ROOT}"
+fi
+EOF
+  chmod 600 "$hook_file" 2>/dev/null || true
+
+  touch "$HOME/.bashrc"
+  sed -i '/# clash-autodl-codex begin/,/# clash-autodl-codex end/d' "$HOME/.bashrc"
+  {
+    echo "# clash-autodl-codex begin"
+    echo "[ -f \"$hook_file\" ] && . \"$hook_file\""
+    echo "# clash-autodl-codex end"
+  } >> "$HOME/.bashrc"
+  log_ok "已在 ~/.bashrc 中安装 clash-Autodl-codex 启动钩子"
+}
+
+print_daily_commands() {
+  cat <<'TEXT'
+
+代理命令:
+  proxy_on
+  proxy_off
+  proxy_pick
+  proxy_status
+
+Codex 中转站命令:
+  codex_use_domestic
+  codex_use_overseas
+  codex_relay_status
+  codex_verify
+TEXT
+}
+
 codex_switch_relay_mode() {
   local mode="$1"
   local config_file="${2:-}"
