@@ -19,7 +19,7 @@ if [ -z "$input_file" ] || [ -z "$output_file" ]; then
 fi
 
 if [ ! -s "$input_file" ]; then
-  echo "[失败] 输入订阅文件不存在或为空: $input_file" >&2
+  echo "[FAIL] 输入订阅文件不存在或为空: $input_file" >&2
   exit 1
 fi
 
@@ -69,15 +69,15 @@ fi
 case "$decode_status" in
   0)
     mv "$tmp_file" "$output_file"
-    echo "[成功] 已将订阅转换为 Clash YAML: $output_file"
+    echo "[OK] 已将订阅转换为 Clash YAML: $output_file"
     ;;
   2)
-    echo "[失败] 订阅不是 Clash YAML，也不是 base64 包装的 Clash YAML。" >&2
-    echo "[失败] 请使用返回 Clash YAML 的订阅 URL，例如带有 clash=3 的地址。" >&2
+    echo "[FAIL] 订阅不是 Clash YAML，也不是 base64 包装的 Clash YAML。" >&2
+    echo "[FAIL] 请使用返回 Clash YAML 的订阅 URL，例如带有 clash=3 的地址。" >&2
     exit 1
     ;;
   *)
-    echo "[失败] 检查订阅格式失败。" >&2
+    echo "[FAIL] 检查订阅格式失败。" >&2
     exit 1
     ;;
 esac
