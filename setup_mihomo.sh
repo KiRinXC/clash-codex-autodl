@@ -177,12 +177,14 @@ inject_codex_rules() {
   local proxy_count
   local proxy_port
   local controller_bind
-  local overseas_host
+  local overseas_host=""
 
-  log_info "正在注入 Codex 中转规则"
+  log_info "正在注入 Mihomo 端口、控制器和 CodexProxy 选择组"
   proxy_port="$(url_port_from_url "$CODEX_PROXY_URL")" || return 1
   controller_bind="$(controller_bind_from_url "$CODEX_MIHOMO_CONTROLLER_URL")" || return 1
-  overseas_host="$(python3 - "$CODEX_OVERSEAS_BASE_URL" <<'PY'
+
+  if [ -n "${CODEX_OVERSEAS_BASE_URL:-}" ]; then
+    overseas_host="$(python3 - "$CODEX_OVERSEAS_BASE_URL" <<'PY'
 import sys
 from urllib.parse import urlparse
 
@@ -192,6 +194,7 @@ if not host:
 print(host)
 PY
 )"
+  fi
 
   CODEX_PROXY_PORT="$proxy_port" \
   CODEX_MIHOMO_CONTROLLER_BIND="$controller_bind" \
@@ -201,8 +204,12 @@ PY
     ."external-controller" = strenv(CODEX_MIHOMO_CONTROLLER_BIND) |
     ."external-ui" = "dashboard" |
     .rules = (
-      ["DOMAIN," + strenv(CODEX_OVERSEAS_HOST) + ",CodexProxy"] +
-      ((.rules // []) | map(select(. != ("DOMAIN," + strenv(CODEX_OVERSEAS_HOST) + ",CodexProxy"))))
+      if strenv(CODEX_OVERSEAS_HOST) == "" then
+        (.rules // [])
+      else
+        ["DOMAIN," + strenv(CODEX_OVERSEAS_HOST) + ",CodexProxy"] +
+        ((.rules // []) | map(select(. != ("DOMAIN," + strenv(CODEX_OVERSEAS_HOST) + ",CodexProxy"))))
+      end
     ) |
     ."proxy-groups" = (
       [{
@@ -220,7 +227,11 @@ PY
     return 1
   fi
 
-  log_ok "已注入 CodexProxy 选择组和中转规则"
+  if [ -n "$overseas_host" ]; then
+    log_ok "已注入 CodexProxy 选择组和中转规则: $overseas_host"
+  else
+    log_ok "已注入 CodexProxy 选择组；Codex 中转规则将在配置中转站后应用"
+  fi
 }
 
 start_mihomo() {
@@ -270,14 +281,12 @@ if [ "${1:-}" = "--help" ]; then
 fi
 
 env_file="${1:-.env}"
-load_env_file "$env_file"
+load_project_config "$env_file"
 
 if [ -z "${CLASH_URL:-}" ]; then
   log_error "CLASH_URL 为空。请先在目标主机的 $env_file 中填写 Clash 订阅地址。"
   exit 1
 fi
-
-validate_codex_relay_urls
 
 install_yq
 download_subscription
