@@ -1,6 +1,3 @@
-.env
-.env.*
-!.env.example
 logs/
 bin/
 docs/

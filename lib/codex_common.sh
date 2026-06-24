@@ -69,19 +69,6 @@ load_project_config() {
   apply_project_defaults
 }
 
-load_env_file() {
-  local env_file="${1:-.env}"
-
-  if [ -f "$env_file" ]; then
-    set -a
-    # shellcheck disable=SC1090
-    . "$env_file"
-    set +a
-  fi
-
-  apply_project_defaults
-}
-
 shell_single_quote() {
   local value="${1:-}"
   local escaped

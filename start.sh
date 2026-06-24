@@ -12,7 +12,6 @@ usage() {
   bash start.sh --reconfigure
   bash start.sh --reconfigure-clash
   bash start.sh --reconfigure-codex
-  bash start.sh --import-env ENV_FILE
 USAGE
 }
 
@@ -99,21 +98,6 @@ ensure_codex_with_proxy() {
   ensure_codex_cli
 }
 
-import_env_file() {
-  local env_file="$1"
-
-  load_env_file "$env_file"
-  validate_http_url CLASH_URL "$CLASH_URL"
-  validate_codex_relay_urls
-  save_project_config
-  if [ -n "${OPENAI_API_KEY:-}" ]; then
-    write_codex_auth
-  fi
-  codex_use_domestic
-  install_shell_hook
-  log_ok "已导入 $env_file 到 $(project_config_file)"
-}
-
 main() {
   case "${1:-}" in
     --help | -h)
@@ -133,13 +117,6 @@ main() {
       ensure_codex_with_proxy
       configure_codex true
       codex_verify
-      ;;
-    --import-env)
-      if [ -z "${2:-}" ]; then
-        usage
-        exit 1
-      fi
-      import_env_file "$2"
       ;;
     "")
       configure_clash false

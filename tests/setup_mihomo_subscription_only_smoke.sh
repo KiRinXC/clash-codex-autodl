@@ -111,7 +111,7 @@ printf 'LISTEN 0 128 127.0.0.1:%s 0.0.0.0:*\n' "${EXPECTED_PROXY_PORT:?}"
 SH
 chmod +x "$fake_bin/ss"
 
-cat > "$tmp_dir/.env" <<'EOF'
+cat > "$tmp_dir/config.sh" <<'EOF'
 export CLASH_URL='https://subscription.example.invalid/clash.yaml'
 export CODEX_PROXY_URL='http://127.0.0.1:17890'
 export CODEX_MIHOMO_CONTROLLER_URL='http://127.0.0.1:16006'
@@ -120,7 +120,7 @@ EOF
 mkdir -p "$work_dir/conf"
 dd if=/dev/zero of="$work_dir/conf/geoip.metadb" bs=1048576 count=2 >/dev/null 2>&1
 
-PATH="$fake_bin:$PATH" EXPECTED_PROXY_PORT=17890 bash "$work_dir/setup_mihomo.sh" "$tmp_dir/.env"
+PATH="$fake_bin:$PATH" EXPECTED_PROXY_PORT=17890 bash "$work_dir/setup_mihomo.sh" "$tmp_dir/config.sh"
 
 grep -qx 'mixed-port: 17890' "$work_dir/conf/config.yaml"
 grep -qx 'external-controller: 127.0.0.1:16006' "$work_dir/conf/config.yaml"

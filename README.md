@@ -32,8 +32,6 @@ OpenAI API key
 ~/.codex/clash-codex-autodl.sh
 ```
 
-不需要手动复制或编辑 `.env`。
-
 ## 初始化流程
 
 `bash start.sh` 会完成：
@@ -154,16 +152,6 @@ bash verify_codex.sh domestic
 bash verify_codex.sh overseas
 ```
 
-## 从旧 `.env` 导入
-
-如果你已经有旧版 `.env`，可以导入到本机持久化配置：
-
-```bash
-bash start.sh --import-env .env
-```
-
-导入后 `.env` 不再是日常使用路径。
-
 ## 卸载
 
 只卸载代理组件：
@@ -183,16 +171,3 @@ bash uninstall_codex_bootstrap.sh --codex
 ```bash
 bash uninstall_codex_bootstrap.sh --all
 ```
-
-## 安全注意
-
-不要提交或公开这些内容：
-
-- `~/.config/clash-codex-autodl/config.sh`
-- `~/.codex/auth.json`
-- Clash/Mihomo 订阅 URL
-- OpenAI API key
-- SSH 登录信息
-- 生成的日志、缓存、二进制文件和运行配置
-
-如果 API key 曾经出现在聊天记录、日志或错误输出里，建议及时轮换。
