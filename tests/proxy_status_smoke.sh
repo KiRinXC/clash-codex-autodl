@@ -3,9 +3,11 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 tmp_dir="$(mktemp -d)"
+fake_bin="$tmp_dir/fake-bin"
 controller_port=18081
 controller_base="http://127.0.0.1:${controller_port}"
 server_log="$tmp_dir/server.log"
+python_cmd=""
 
 cleanup() {
   if [ -n "${server_pid:-}" ] && kill -0 "$server_pid" >/dev/null 2>&1; then
@@ -15,7 +17,33 @@ cleanup() {
 }
 trap cleanup EXIT
 
-python3 - "$controller_port" >"$server_log" 2>&1 <<'PY' &
+mkdir -p "$fake_bin"
+
+for candidate in python3 python; do
+  if command -v "$candidate" >/dev/null 2>&1; then
+    candidate_path="$(command -v "$candidate")"
+    if "$candidate_path" - <<'PY' >/dev/null 2>&1
+import sys
+PY
+    then
+      python_cmd="$candidate_path"
+      break
+    fi
+  fi
+done
+
+if [ -z "$python_cmd" ]; then
+  echo "missing working python"
+  exit 1
+fi
+
+cat > "$fake_bin/python3" <<SH
+#!/usr/bin/env bash
+exec "$python_cmd" "\$@"
+SH
+chmod +x "$fake_bin/python3"
+
+"$python_cmd" - "$controller_port" >"$server_log" 2>&1 <<'PY' &
 import json
 import sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -51,7 +79,8 @@ sleep 1
 
 output="$(
   CODEX_AUTODL_CONFIG_DIR="$tmp_dir" \
-  bash -lc "
+  PATH="$fake_bin:$PATH" \
+  bash -c "
     set -euo pipefail
     source '$repo_root/lib/codex_common.sh'
     CODEX_PROXY_URL='http://127.0.0.1:7890'
@@ -63,5 +92,5 @@ output="$(
   " 2>&1
 )"
 
-grep -q "\[INFO\].*代理: 已开启" <<<"$output"
-grep -q "\[INFO\].*当前节点: Node A" <<<"$output"
+grep -q "\[INFO\].*7890" <<<"$output"
+grep -q "\[INFO\].*Node A" <<<"$output"

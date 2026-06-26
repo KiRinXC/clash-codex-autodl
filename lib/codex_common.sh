@@ -126,6 +126,72 @@ validate_http_url() {
   esac
 }
 
+url_hostname() {
+  local url="$1"
+  local host rest
+
+  if command -v python3 >/dev/null 2>&1; then
+    host="$(
+      python3 - "$url" <<'PY' 2>/dev/null || true
+import sys
+from urllib.parse import urlparse
+
+host = urlparse(sys.argv[1]).hostname
+if host:
+    print(host)
+PY
+    )"
+    if [ -n "$host" ]; then
+      printf '%s\n' "$host"
+      return 0
+    fi
+  fi
+
+  rest="$url"
+  case "$rest" in
+    *://*) rest="${rest#*://}" ;;
+  esac
+  rest="${rest%%/*}"
+  rest="${rest%%\?*}"
+  rest="${rest%%#*}"
+  rest="${rest##*@}"
+
+  case "$rest" in
+    \[*\]*)
+      host="${rest#\[}"
+      host="${host%%\]*}"
+      ;;
+    *)
+      host="${rest%%:*}"
+      ;;
+  esac
+
+  if [ -z "$host" ]; then
+    return 1
+  fi
+
+  printf '%s\n' "$host"
+}
+
+python_command() {
+  local candidate candidate_path
+
+  for candidate in python3 python; do
+    if command -v "$candidate" >/dev/null 2>&1; then
+      candidate_path="$(command -v "$candidate")"
+      if "$candidate_path" - <<'PY' >/dev/null 2>&1
+import sys
+PY
+      then
+        printf '%s\n' "$candidate_path"
+        return 0
+      fi
+    fi
+  done
+
+  return 1
+}
+
 validate_codex_relay_urls() {
   local missing=0
 
@@ -152,7 +218,7 @@ proxy_env_is_active() {
 
 local_proxy_is_listening() {
   local proxy_url="${1:-$CODEX_PROXY_URL}"
-  local host_port host port
+  local host_port host port python_bin
 
   host_port="${proxy_url#http://}"
   host_port="${host_port#https://}"
@@ -178,8 +244,8 @@ local_proxy_is_listening() {
     lsof -iTCP:"${port}" -sTCP:LISTEN >/dev/null 2>&1 && return 0
   fi
 
-  if command -v python3 >/dev/null 2>&1; then
-    PROXY_LISTEN_HOST="$host" PROXY_LISTEN_PORT="$port" python3 - <<'PY' && return 0
+  if python_bin="$(python_command)"; then
+    PROXY_LISTEN_HOST="$host" PROXY_LISTEN_PORT="$port" "$python_bin" - <<'PY' && return 0
 import os
 import socket
 import sys
@@ -247,7 +313,12 @@ function proxy-off {
 }
 
 current_proxy_node() {
-  local tmp_py
+  local tmp_py python_bin
+  python_bin="$(python_command)" || {
+    printf 'unknown\n'
+    return 0
+  }
+
   tmp_py="$(mktemp)"
   cat > "$tmp_py" <<'PY'
 import json
@@ -267,7 +338,7 @@ except Exception:
 PY
   CODEX_MIHOMO_CONTROLLER_URL="$CODEX_MIHOMO_CONTROLLER_URL" \
     CODEX_PROXY_GROUP="$CODEX_PROXY_GROUP" \
-    python3 "$tmp_py"
+    "$python_bin" "$tmp_py"
   rm -f "$tmp_py"
 }
 
@@ -277,10 +348,10 @@ function proxy-status {
   log_info "代理: $(proxy_env_is_active && printf '已开启' || printf '未开启')"
   log_info "代理地址: $CODEX_PROXY_URL"
   log_info "Mihomo: $(proxy_process_is_running && printf '运行中' || printf '未运行')"
-  if command -v python3 >/dev/null 2>&1; then
+  if python_command >/dev/null 2>&1; then
     log_info "当前节点: $(current_proxy_node)"
   else
-    log_warn "当前节点: 未检测，缺少 python3"
+    log_warn "当前节点: 未检测，缺少可用的 python3/python"
   fi
 }
 
@@ -388,16 +459,10 @@ inject_codex_overseas_rule_into_mihomo_config() {
     return 0
   fi
 
-  overseas_host="$(python3 - "$CODEX_OVERSEAS_BASE_URL" <<'PY'
-import sys
-from urllib.parse import urlparse
-
-host = urlparse(sys.argv[1]).hostname
-if not host:
-    raise SystemExit(1)
-print(host)
-PY
-)"
+  overseas_host="$(url_hostname "$CODEX_OVERSEAS_BASE_URL")" || {
+    log_warn "无法解析 CODEX_OVERSEAS_BASE_URL 的 host，跳过 Mihomo 海外规则更新"
+    return 0
+  }
 
   CODEX_OVERSEAS_HOST="$overseas_host" "$yq_binary" eval -i '
     ."mixed-port" = (.["mixed-port"] // 7890) |
@@ -564,10 +629,10 @@ startup_proxy_status() {
     log_warn "代理: 未开启"
   fi
 
-  if command -v python3 >/dev/null 2>&1; then
+  if python_command >/dev/null 2>&1; then
     log_ok "当前节点: $(current_proxy_node)"
   else
-    log_warn "当前节点: 未检测，缺少 python3"
+    log_warn "当前节点: 未检测，缺少可用的 python3/python"
   fi
 }
 
@@ -725,12 +790,13 @@ codex_audit_host() {
 
 function proxy-pick {
   load_project_config
-  if ! command -v python3 >/dev/null 2>&1; then
-    log_error "缺少命令: python3"
-    return 0
-  fi
+  local tmp_py python_bin
 
-  local tmp_py
+  python_bin="$(python_command)" || {
+    log_error "缺少可用的 python3/python"
+    return 0
+  }
+
   tmp_py="$(mktemp)"
   cat > "$tmp_py" <<'PY'
 import json
@@ -809,7 +875,7 @@ while True:
 PY
   if CODEX_MIHOMO_CONTROLLER_URL="$CODEX_MIHOMO_CONTROLLER_URL" \
     CODEX_PROXY_GROUP="$CODEX_PROXY_GROUP" \
-    python3 "$tmp_py"; then
+    "$python_bin" "$tmp_py"; then
     rm -f "$tmp_py"
     return 0
   else
@@ -882,10 +948,19 @@ codex_smoke_test() {
 
   cp "$tmp_log" /tmp/codex-bootstrap-smoke.log 2>/dev/null || true
 
-  if grep -q 'CODEX_RELAY_READY' "$tmp_output" || grep -q 'CODEX_RELAY_READY' "$tmp_log"; then
-    if [ "$codex_status" = "124" ] && [ "$quiet" != "true" ]; then
-      log_warn "Codex 冒烟测试命令在输出预期回复后超时"
+  if [ "$codex_status" != "0" ]; then
+    if [ "$codex_status" = "124" ]; then
+      log_error "Codex 冒烟测试在 ${smoke_timeout}s 后超时"
+    else
+      log_error "Codex 冒烟测试命令失败，退出码为 $codex_status"
     fi
+    log_error "Codex 冒烟测试回复中没有包含预期内容，日志: /tmp/codex-bootstrap-smoke.log"
+    cat "$tmp_log" >&2 || true
+    rm -f "$tmp_output" "$tmp_log"
+    return 1
+  fi
+
+  if grep -Fxq 'CODEX_RELAY_READY' "$tmp_output"; then
     rm -f "$tmp_output" "$tmp_log"
     if [ "$quiet" != "true" ]; then
       log_ok "Codex 可用"
@@ -893,11 +968,6 @@ codex_smoke_test() {
     return 0
   fi
 
-  if [ "$codex_status" = "124" ]; then
-    log_error "Codex 冒烟测试在 ${smoke_timeout}s 后超时"
-  elif [ "$codex_status" != "0" ]; then
-    log_error "Codex 冒烟测试命令失败，退出码为 $codex_status"
-  fi
   log_error "Codex 冒烟测试回复中没有包含预期内容，日志: /tmp/codex-bootstrap-smoke.log"
   cat "$tmp_log" >&2 || true
   rm -f "$tmp_output" "$tmp_log"

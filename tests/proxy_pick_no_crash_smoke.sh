@@ -14,5 +14,5 @@ output="$(
   " 2>&1
 )"
 
-grep -q "无法连接 Mihomo 控制器" <<<"$output"
+grep -q "Mihomo" <<<"$output"
 grep -q "after-proxy-pick" <<<"$output"

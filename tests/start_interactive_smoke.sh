@@ -116,9 +116,20 @@ chmod +x "$fake_bin/ss"
 
 cat > "$fake_bin/codex" <<'SH'
 #!/usr/bin/env bash
-if [ "${1:-}" = "exec" ]; then
-  echo "CODEX_RELAY_READY"
-  exit 0
+out_file=""
+while [ "${1:-}" != "" ]; do
+  case "$1" in
+    --output-last-message)
+      out_file="$2"
+      shift 2
+      ;;
+    *)
+      shift
+      ;;
+  esac
+done
+if [ -n "$out_file" ]; then
+  printf '%s\n' "CODEX_RELAY_READY" > "$out_file"
 fi
 exit 0
 SH

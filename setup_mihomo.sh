@@ -222,16 +222,10 @@ inject_codex_rules() {
   controller_bind="$(controller_bind_from_url "$CODEX_MIHOMO_CONTROLLER_URL")" || return 1
 
   if [ -n "${CODEX_OVERSEAS_BASE_URL:-}" ]; then
-    overseas_host="$(python3 - "$CODEX_OVERSEAS_BASE_URL" <<'PY'
-import sys
-from urllib.parse import urlparse
-
-host = urlparse(sys.argv[1]).hostname
-if not host:
-    raise SystemExit(1)
-print(host)
-PY
-)"
+    overseas_host="$(url_hostname "$CODEX_OVERSEAS_BASE_URL")" || {
+      log_warn "无法解析 CODEX_OVERSEAS_BASE_URL 的 host，跳过 Mihomo 海外规则更新"
+      overseas_host=""
+    }
   fi
 
   if [ -n "$overseas_host" ]; then

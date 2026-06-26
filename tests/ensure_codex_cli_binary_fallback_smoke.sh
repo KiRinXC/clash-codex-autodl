@@ -63,7 +63,7 @@ exit 127
 SH
 chmod +x "$fake_bin/npm"
 
-PATH="$fake_bin:/usr/bin:/bin" HOME="$tmp_home" bash -lc "
+PATH="$fake_bin:/usr/bin:/bin" HOME="$tmp_home" bash -c "
   set -euo pipefail
   source '$repo_root/lib/codex_common.sh'
   ensure_codex_cli

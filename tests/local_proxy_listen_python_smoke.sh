@@ -5,6 +5,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 tmp_dir="$(mktemp -d)"
 fake_bin="$tmp_dir/fake-bin"
 port_file="$tmp_dir/port"
+python_cmd=""
 
 cleanup() {
   if [ -n "${server_pid:-}" ] && kill -0 "$server_pid" >/dev/null 2>&1; then
@@ -15,6 +16,30 @@ cleanup() {
 trap cleanup EXIT
 
 mkdir -p "$fake_bin"
+
+for candidate in python3 python; do
+  if command -v "$candidate" >/dev/null 2>&1; then
+    candidate_path="$(command -v "$candidate")"
+    if "$candidate_path" - <<'PY' >/dev/null 2>&1
+import sys
+PY
+    then
+      python_cmd="$candidate_path"
+      break
+    fi
+  fi
+done
+
+if [ -z "$python_cmd" ]; then
+  echo "missing working python"
+  exit 1
+fi
+
+cat > "$fake_bin/python3" <<SH
+#!/usr/bin/env bash
+exec "$python_cmd" "\$@"
+SH
+chmod +x "$fake_bin/python3"
 
 cat > "$fake_bin/ss" <<'SH'
 #!/usr/bin/env bash
@@ -28,7 +53,7 @@ exit 1
 SH
 chmod +x "$fake_bin/lsof"
 
-python3 - "$port_file" <<'PY' &
+"$python_cmd" - "$port_file" <<'PY' &
 import socket
 import sys
 
@@ -54,7 +79,7 @@ for _ in $(seq 1 50); do
 done
 
 port="$(cat "$port_file")"
-PATH="$fake_bin:$PATH" bash -lc "
+PATH="$fake_bin:$PATH" bash -c "
   set -euo pipefail
   source '$repo_root/lib/codex_common.sh'
   local_proxy_is_listening 'http://127.0.0.1:$port'
