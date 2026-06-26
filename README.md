@@ -69,19 +69,25 @@ proxy-status
 
 ## Codex 中转站命令
 
-Codex 中转站命令只修改 `~/.codex/config.toml`，不会开启或关闭代理。
+Codex 中转站命令只处理 Codex 使用哪个中转站，以及本机保存的中转站网址；不会开启或关闭代理。
 
 ```bash
 codex-use-in
 codex-use-out
+codex-ex-in [url]
+codex-ex-out [url]
 codex-status
 codex-verify
 ```
 
 - `codex-use-in`：让 Codex 使用国内/直连中转站。
 - `codex-use-out`：让 Codex 使用国外/代理中转站。
+- `codex-ex-in [url]`：修改国内/直连中转站网址；不传 `url` 时会在终端提示输入。
+- `codex-ex-out [url]`：修改国外/代理中转站网址；不传 `url` 时会在终端提示输入。
 - `codex-status`：显示当前 Codex 使用的中转站。
 - `codex-verify`：运行 Codex 冒烟测试。
+
+`codex-ex-in` 和 `codex-ex-out` 会把新网址持久化到本机配置。如果你修改的是当前正在使用的那一路，也会立即刷新 `~/.codex/config.toml`。修改国外/代理中转站时，会同步更新 Mihomo 里的海外中转规则。
 
 如果你想通过代理访问国外中转站，通常需要手动组合：
 

@@ -704,6 +704,8 @@ print_daily_commands() {
 Codex 中转站命令:
   codex-use-in
   codex-use-out
+  codex-ex-in
+  codex-ex-out
   codex-status
   codex-verify
 TEXT
@@ -745,6 +747,75 @@ function codex-use-in {
 function codex-use-out {
   codex_switch_relay_mode overseas
   inject_codex_overseas_rule_into_mihomo_config || true
+}
+
+codex_exchange_relay_url() {
+  local mode="$1"
+  local url="${2:-}"
+  local name prompt active_mode
+
+  if [ "$#" -gt 2 ]; then
+    log_error "用法: codex-ex-in [url] 或 codex-ex-out [url]"
+    return 1
+  fi
+
+  load_project_config
+
+  case "$mode" in
+    domestic)
+      name="CODEX_DOMESTIC_BASE_URL"
+      prompt="Domestic/direct Codex relay URL: "
+      ;;
+    overseas)
+      name="CODEX_OVERSEAS_BASE_URL"
+      prompt="Overseas/proxy Codex relay URL: "
+      ;;
+    *)
+      log_error "中转模式无效: $mode"
+      return 1
+      ;;
+  esac
+
+  if [ -z "$url" ]; then
+    printf '%s' "$prompt" >&2
+    IFS= read -r url || {
+      log_error "未读取到 Codex 中转站 URL"
+      return 1
+    }
+  fi
+
+  validate_http_url "$name" "$url" || return 1
+
+  case "$mode" in
+    domestic)
+      CODEX_DOMESTIC_BASE_URL="$url"
+      ;;
+    overseas)
+      CODEX_OVERSEAS_BASE_URL="$url"
+      ;;
+  esac
+
+  save_project_config
+  log_ok "已更新 Codex 中转站 $mode: $url"
+
+  active_mode="$(detect_relay_mode)" || active_mode=""
+  if [ "$active_mode" = "$mode" ]; then
+    write_codex_config_for_mode "$mode"
+  else
+    log_info "当前 Codex 仍使用 $active_mode，中转站网址已保存"
+  fi
+
+  if [ "$mode" = "overseas" ]; then
+    inject_codex_overseas_rule_into_mihomo_config || true
+  fi
+}
+
+function codex-ex-in {
+  codex_exchange_relay_url domestic "$@"
+}
+
+function codex-ex-out {
+  codex_exchange_relay_url overseas "$@"
 }
 
 function codex-status {

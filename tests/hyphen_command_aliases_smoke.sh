@@ -22,7 +22,7 @@ grep -q "after-proxy-pick" <<<"$output"
 function_names="$(
   bash -lc "
     source '$repo_root/lib/codex_common.sh'
-    type proxy-on proxy-off proxy-status codex-use-in codex-use-out codex-status codex-verify
+    type proxy-on proxy-off proxy-status codex-use-in codex-use-out codex-ex-in codex-ex-out codex-status codex-verify
   " 2>&1
 )"
 
@@ -31,6 +31,8 @@ grep -q "proxy-off is a function" <<<"$function_names"
 grep -q "proxy-status is a function" <<<"$function_names"
 grep -q "codex-use-in is a function" <<<"$function_names"
 grep -q "codex-use-out is a function" <<<"$function_names"
+grep -q "codex-ex-in is a function" <<<"$function_names"
+grep -q "codex-ex-out is a function" <<<"$function_names"
 grep -q "codex-status is a function" <<<"$function_names"
 grep -q "codex-verify is a function" <<<"$function_names"
 
