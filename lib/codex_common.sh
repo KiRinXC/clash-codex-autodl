@@ -919,6 +919,27 @@ relay_responds_via_proxy() {
   return 1
 }
 
+codex_smoke_log_summary() {
+  local log_file="$1"
+  local reason=""
+
+  if [ ! -s "$log_file" ]; then
+    return 0
+  fi
+
+  if grep -q 'stream disconnected before completion' "$log_file"; then
+    reason="$(grep 'stream disconnected before completion' "$log_file" | tail -n 1 | sed 's/^ERROR:[[:space:]]*//')"
+  elif grep -q '^ERROR:' "$log_file"; then
+    reason="$(grep '^ERROR:' "$log_file" | tail -n 1 | sed 's/^ERROR:[[:space:]]*//')"
+  elif grep -qi 'timed out\|timeout' "$log_file"; then
+    reason="$(grep -i 'timed out\|timeout' "$log_file" | tail -n 1)"
+  fi
+
+  if [ -n "$reason" ]; then
+    log_error "Codex 冒烟测试失败原因: $reason"
+  fi
+}
+
 codex_smoke_test() {
   local codex_status
   local smoke_timeout="${CODEX_SMOKE_TIMEOUT:-180}"
@@ -955,7 +976,7 @@ codex_smoke_test() {
       log_error "Codex 冒烟测试命令失败，退出码为 $codex_status"
     fi
     log_error "Codex 冒烟测试回复中没有包含预期内容，日志: /tmp/codex-bootstrap-smoke.log"
-    cat "$tmp_log" >&2 || true
+    codex_smoke_log_summary "$tmp_log"
     rm -f "$tmp_output" "$tmp_log"
     return 1
   fi
@@ -969,7 +990,7 @@ codex_smoke_test() {
   fi
 
   log_error "Codex 冒烟测试回复中没有包含预期内容，日志: /tmp/codex-bootstrap-smoke.log"
-  cat "$tmp_log" >&2 || true
+  codex_smoke_log_summary "$tmp_log"
   rm -f "$tmp_output" "$tmp_log"
   return 1
 }

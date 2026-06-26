@@ -65,6 +65,7 @@ fi
 grep -q '\[FAIL\].*1s' <<<"$log_only_output"
 grep -q '/tmp/codex-bootstrap-smoke.log' <<<"$log_only_output"
 ! grep -q '\[OK\].*Codex' <<<"$log_only_output"
+! grep -q 'log mentions CODEX_RELAY_READY' <<<"$log_only_output"
 
 set +e
 nonzero_output="$(
@@ -96,3 +97,36 @@ fi
 
 grep -q '\[FAIL\].*42' <<<"$nonzero_output"
 ! grep -q '\[OK\].*Codex' <<<"$nonzero_output"
+
+set +e
+error_summary_output="$(
+  run_with_fake_codex '
+out_file=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --output-last-message)
+      out_file="$2"
+      shift 2
+      ;;
+    *)
+      shift
+      ;;
+  esac
+done
+printf "%s\n" "Reading additional input from stdin..." >&2
+printf "%s\n" "ERROR: stream disconnected before completion" >&2
+printf "%s\n" "NOT_READY" > "$out_file"
+exit 1
+'
+)"
+error_summary_status="$?"
+set -e
+
+if [ "$error_summary_status" -eq 0 ]; then
+  printf '%s\n' "$error_summary_output"
+  echo "expected stream-disconnected case to fail"
+  exit 1
+fi
+
+grep -q '\[FAIL\].*stream disconnected before completion' <<<"$error_summary_output"
+! grep -q 'Reading additional input from stdin' <<<"$error_summary_output"
