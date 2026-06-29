@@ -345,13 +345,21 @@ PY
 function proxy-status {
   load_project_config
 
-  log_info "代理: $(proxy_env_is_active && printf '已开启' || printf '未开启')"
-  log_info "代理地址: $CODEX_PROXY_URL"
-  log_info "Mihomo: $(proxy_process_is_running && printf '运行中' || printf '未运行')"
-  if python_command >/dev/null 2>&1; then
-    log_info "当前节点: $(current_proxy_node)"
+  if proxy_env_is_active; then
+    log_ok "代理: 已开启"
   else
-    log_warn "当前节点: 未检测，缺少可用的 python3/python"
+    log_warn "代理: 未开启"
+  fi
+  log_info "地址: $CODEX_PROXY_URL"
+  if proxy_process_is_running; then
+    log_ok "Mihomo: 运行中"
+  else
+    log_warn "Mihomo: 未运行"
+  fi
+  if python_command >/dev/null 2>&1; then
+    log_ok "当前节点: $(current_proxy_node)"
+  else
+    log_warn "当前节点: 未检测，系统缺少可用的 Python"
   fi
 }
 
@@ -752,7 +760,7 @@ function codex-use-out {
 codex_exchange_relay_url() {
   local mode="$1"
   local url="${2:-}"
-  local name prompt active_mode
+  local name prompt active_mode original_mode
 
   if [ "$#" -gt 2 ]; then
     log_error "用法: codex-ex-in [url] 或 codex-ex-out [url]"
@@ -764,11 +772,11 @@ codex_exchange_relay_url() {
   case "$mode" in
     domestic)
       name="CODEX_DOMESTIC_BASE_URL"
-      prompt="Domestic/direct Codex relay URL: "
+      prompt="请输入国内直连中转站地址: "
       ;;
     overseas)
       name="CODEX_OVERSEAS_BASE_URL"
-      prompt="Overseas/proxy Codex relay URL: "
+      prompt="请输入国外代理中转站地址: "
       ;;
     *)
       log_error "中转模式无效: $mode"
@@ -795,14 +803,18 @@ codex_exchange_relay_url() {
       ;;
   esac
 
-  save_project_config
-  log_ok "已更新 Codex 中转站 $mode: $url"
+  original_mode="$(detect_relay_mode)" || original_mode=""
 
-  active_mode="$(detect_relay_mode)" || active_mode=""
+  save_project_config
+
+  active_mode="$original_mode"
   if [ "$active_mode" = "$mode" ]; then
-    write_codex_config_for_mode "$mode"
+    write_codex_config_for_mode "$mode" >/dev/null
+    log_ok "Codex 中转站: $mode $url"
+  elif [ -n "$active_mode" ]; then
+    log_ok "已保存 $mode 中转站: $url"
   else
-    log_info "当前 Codex 仍使用 $active_mode，中转站网址已保存"
+    log_ok "已保存 $mode 中转站: $url"
   fi
 
   if [ "$mode" = "overseas" ]; then
@@ -1007,7 +1019,7 @@ codex_smoke_log_summary() {
   fi
 
   if [ -n "$reason" ]; then
-    log_error "Codex 冒烟测试失败原因: $reason"
+    log_error "原因: $reason"
   fi
 }
 
@@ -1042,11 +1054,12 @@ codex_smoke_test() {
 
   if [ "$codex_status" != "0" ]; then
     if [ "$codex_status" = "124" ]; then
-      log_error "Codex 冒烟测试在 ${smoke_timeout}s 后超时"
+      log_error "Codex 验证失败，退出码: 124"
+      log_error "原因: 超时（${smoke_timeout}s）"
     else
-      log_error "Codex 冒烟测试命令失败，退出码为 $codex_status"
+      log_error "Codex 验证失败，退出码: $codex_status"
     fi
-    log_error "Codex 冒烟测试回复中没有包含预期内容，日志: /tmp/codex-bootstrap-smoke.log"
+    printf '\033[1;34m[INFO]\033[0m 详细日志: /tmp/codex-bootstrap-smoke.log\n' >&2
     codex_smoke_log_summary "$tmp_log"
     rm -f "$tmp_output" "$tmp_log"
     return 1
@@ -1060,7 +1073,8 @@ codex_smoke_test() {
     return 0
   fi
 
-  log_error "Codex 冒烟测试回复中没有包含预期内容，日志: /tmp/codex-bootstrap-smoke.log"
+  log_error "Codex 验证失败，退出码: 1"
+  printf '\033[1;34m[INFO]\033[0m 详细日志: /tmp/codex-bootstrap-smoke.log\n' >&2
   codex_smoke_log_summary "$tmp_log"
   rm -f "$tmp_output" "$tmp_log"
   return 1

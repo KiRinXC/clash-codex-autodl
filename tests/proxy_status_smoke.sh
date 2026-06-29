@@ -92,5 +92,6 @@ output="$(
   " 2>&1
 )"
 
-grep -q "\[INFO\].*7890" <<<"$output"
-grep -q "\[INFO\].*Node A" <<<"$output"
+grep -q "\[OK\].*代理: 已开启" <<<"$output"
+grep -q "\[INFO\].*地址: http://127.0.0.1:7890" <<<"$output"
+grep -q "\[OK\].*当前节点: Node A" <<<"$output"

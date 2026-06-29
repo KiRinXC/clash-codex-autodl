@@ -23,10 +23,10 @@ source ~/.codex/clash-codex-autodl.sh
 脚本会依次提示你输入：
 
 ```text
-Clash/Mihomo subscription URL
-Domestic/direct Codex relay URL
-Overseas/proxy Codex relay URL
-OpenAI API key
+请输入 Clash/Mihomo 订阅地址
+请输入国内直连中转站地址
+请输入国外代理中转站地址
+请输入 OpenAI API Key
 ```
 
 这些内容会持久化到本机：

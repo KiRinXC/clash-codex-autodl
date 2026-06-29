@@ -62,8 +62,8 @@ if [ "$log_only_status" -eq 0 ]; then
   exit 1
 fi
 
-grep -q '\[FAIL\].*1s' <<<"$log_only_output"
-grep -q '/tmp/codex-bootstrap-smoke.log' <<<"$log_only_output"
+grep -q '\[FAIL\].*验证失败.*1' <<<"$log_only_output"
+grep -q '\[INFO\].*/tmp/codex-bootstrap-smoke.log' <<<"$log_only_output"
 ! grep -q '\[OK\].*Codex' <<<"$log_only_output"
 ! grep -q 'log mentions CODEX_RELAY_READY' <<<"$log_only_output"
 
@@ -95,7 +95,7 @@ if [ "$nonzero_status" -eq 0 ]; then
   exit 1
 fi
 
-grep -q '\[FAIL\].*42' <<<"$nonzero_output"
+grep -q '\[FAIL\].*验证失败.*42' <<<"$nonzero_output"
 ! grep -q '\[OK\].*Codex' <<<"$nonzero_output"
 
 set +e
@@ -128,5 +128,6 @@ if [ "$error_summary_status" -eq 0 ]; then
   exit 1
 fi
 
-grep -q '\[FAIL\].*stream disconnected before completion' <<<"$error_summary_output"
+grep -q '\[FAIL\].*验证失败.*1' <<<"$error_summary_output"
+grep -q '\[FAIL\].*原因: stream disconnected before completion' <<<"$error_summary_output"
 ! grep -q 'Reading additional input from stdin' <<<"$error_summary_output"

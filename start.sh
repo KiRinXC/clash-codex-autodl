@@ -64,7 +64,7 @@ configure_clash() {
 
   load_project_config
   if [ "$force" = "true" ] || [ -z "${CLASH_URL:-}" ]; then
-    CLASH_URL="$(prompt_required "Clash/Mihomo subscription URL" "${CLASH_URL:-}")"
+    CLASH_URL="$(prompt_required "请输入 Clash/Mihomo 订阅地址" "${CLASH_URL:-}")"
   fi
   validate_http_url CLASH_URL "$CLASH_URL"
   save_project_config
@@ -79,12 +79,12 @@ configure_codex() {
 
   load_project_config
   if [ "$force" = "true" ] || [ -z "${CODEX_DOMESTIC_BASE_URL:-}" ]; then
-    CODEX_DOMESTIC_BASE_URL="$(prompt_required "Domestic/direct Codex relay URL" "${CODEX_DOMESTIC_BASE_URL:-}")"
+    CODEX_DOMESTIC_BASE_URL="$(prompt_required "请输入国内直连中转站地址" "${CODEX_DOMESTIC_BASE_URL:-}")"
   fi
   if [ "$force" = "true" ] || [ -z "${CODEX_OVERSEAS_BASE_URL:-}" ]; then
-    CODEX_OVERSEAS_BASE_URL="$(prompt_required "Overseas/proxy Codex relay URL" "${CODEX_OVERSEAS_BASE_URL:-}")"
+    CODEX_OVERSEAS_BASE_URL="$(prompt_required "请输入国外代理中转站地址" "${CODEX_OVERSEAS_BASE_URL:-}")"
   fi
-  OPENAI_API_KEY="$(prompt_secret "OpenAI API key")"
+  OPENAI_API_KEY="$(prompt_secret "请输入 OpenAI API Key")"
 
   validate_codex_relay_urls
   save_project_config

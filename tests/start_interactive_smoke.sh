@@ -145,11 +145,16 @@ https://domestic.example.invalid/api
 https://overseas.example.invalid/api
 test-api-key
 EOF
+  2>&1
 )"
 
 grep -q 'proxy-status' <<<"$output"
 grep -q 'codex-use-in' <<<"$output"
 grep -q 'source ~/.codex/clash-codex-autodl.sh' <<<"$output"
+grep -q '请输入 Clash/Mihomo 订阅地址' "$work_dir/start.sh"
+grep -q '请输入国内直连中转站地址' "$work_dir/start.sh"
+grep -q '请输入国外代理中转站地址' "$work_dir/start.sh"
+grep -q '请输入 OpenAI API Key' "$work_dir/start.sh"
 grep -q "CLASH_URL='https://subscription.example.invalid/clash.yaml'" "$tmp_state/config.sh"
 grep -q "CODEX_ACTIVE_RELAY='domestic'" "$tmp_state/config.sh"
 grep -q "AUTO_PROXY_ON_SHELL_START='true'" "$tmp_state/config.sh"
